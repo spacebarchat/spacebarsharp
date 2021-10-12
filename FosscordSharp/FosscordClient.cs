@@ -78,21 +78,21 @@ namespace FosscordSharp
         {
             var res = await _httpClient.GetStringAsync("/api/v9/users/@me/guilds");
             Util.Log(res);
-            var a = JsonConvert.DeserializeObject<JArray>(res);
-            List < Guild > guilds = new();
-            Util.Log(a.Count+"");
-            foreach (var jToken in a)
+            var aa = JsonConvert.DeserializeObject<GuildTemp[]>(res);
+            Util.Log("aa: "+aa.Length+"");
+            foreach (var temp in aa)
             {
-                var b = jToken.ToObject<Guild>();
-                var c = b.Name;
-                guilds.Add(b);
-                Util.Log(c);
+                Util.Log(temp.Id+"");
             }
-            Util.Log(a + "");
-            // foreach (var guild in a)
-            // {
-            //     guild._client = this;
-            // }
+            
+            var a = JsonConvert.DeserializeObject<Guild[]>(res);
+            Util.Log(" a: "+a.Length+"");
+            foreach (var temp in a)
+            {
+                Util.Log(temp.Id+"");
+            }
+
+            
             return new []{new Guild()};
             // return await _httpClient.GetFromJsonAsync<Guild[]>("/api/v9/users/@me/guilds");
         }

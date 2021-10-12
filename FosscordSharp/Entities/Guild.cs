@@ -8,20 +8,20 @@ namespace FosscordSharp.Entities
     public class Guild
     {
         internal FosscordClient _client;
-        [JsonProperty("id")]
-        public string Id { get; set; }
+[JsonProperty("id")]
+        public ulong Id { get; set; }
 
         [JsonProperty("afk_channel_id")]
         public object AfkChannelId { get; set; }
 
         [JsonProperty("afk_timeout")]
-        public int AfkTimeout { get; set; }
+        public long AfkTimeout { get; set; }
 
         [JsonProperty("banner")]
         public object Banner { get; set; }
 
         [JsonProperty("default_message_notifications")]
-        public int DefaultMessageNotifications { get; set; }
+        public long DefaultMessageNotifications { get; set; }
 
         [JsonProperty("description")]
         public object Description { get; set; }
@@ -30,7 +30,7 @@ namespace FosscordSharp.Entities
         public object DiscoverySplash { get; set; }
 
         [JsonProperty("explicit_content_filter")]
-        public int ExplicitContentFilter { get; set; }
+        public long ExplicitContentFilter { get; set; }
 
         [JsonProperty("features")]
         public List<object> Features { get; set; }
@@ -42,25 +42,25 @@ namespace FosscordSharp.Entities
         public object Large { get; set; }
 
         [JsonProperty("max_members")]
-        public int MaxMembers { get; set; }
+        public long MaxMembers { get; set; }
 
         [JsonProperty("max_presences")]
-        public int MaxPresences { get; set; }
+        public long MaxPresences { get; set; }
 
         [JsonProperty("max_video_channel_users")]
-        public int MaxVideoChannelUsers { get; set; }
+        public long MaxVideoChannelUsers { get; set; }
 
         [JsonProperty("member_count")]
-        public int MemberCount { get; set; }
+        public long MemberCount { get; set; }
 
         [JsonProperty("presence_count")]
-        public int PresenceCount { get; set; }
+        public long PresenceCount { get; set; }
 
         [JsonProperty("template_id")]
         public object TemplateId { get; set; }
 
         [JsonProperty("mfa_level")]
-        public int MfaLevel { get; set; }
+        public long MfaLevel { get; set; }
 
         [JsonProperty("name")]
         public string Name { get; set; }
@@ -72,10 +72,10 @@ namespace FosscordSharp.Entities
         public string PreferredLocale { get; set; }
 
         [JsonProperty("premium_subscription_count")]
-        public int PremiumSubscriptionCount { get; set; }
+        public long PremiumSubscriptionCount { get; set; }
 
         [JsonProperty("premium_tier")]
-        public int PremiumTier { get; set; }
+        public long PremiumTier { get; set; }
 
         [JsonProperty("public_updates_channel_id")]
         public object PublicUpdatesChannelId { get; set; }
@@ -93,13 +93,13 @@ namespace FosscordSharp.Entities
         public object SystemChannelId { get; set; }
 
         [JsonProperty("system_channel_flags")]
-        public int SystemChannelFlags { get; set; }
+        public long SystemChannelFlags { get; set; }
 
         [JsonProperty("unavailable")]
         public bool Unavailable { get; set; }
 
         [JsonProperty("verification_level")]
-        public int VerificationLevel { get; set; }
+        public long VerificationLevel { get; set; }
 
         // [JsonProperty("welcome_screen")]
         // public WelcomeScreen WelcomeScreen { get; set; }
@@ -111,11 +111,12 @@ namespace FosscordSharp.Entities
         public bool WidgetEnabled { get; set; }
 
         [JsonProperty("nsfw_level")]
-        public int NsfwLevel { get; set; }
+        public long NsfwLevel { get; set; }
 
         [JsonProperty("nsfw")]
         public bool Nsfw { get; set; }
 
+        [JsonConstructor]
         public Guild()
         {
             
@@ -136,5 +137,10 @@ namespace FosscordSharp.Entities
             Util.Log(a.Length+ " channels");
             return a;
         }
+    }
+    public class GuildTemp
+    {
+        [JsonProperty("id")]
+        public ulong Id { get; set; }
     }
 }
