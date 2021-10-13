@@ -9,7 +9,7 @@ namespace FosscordSharp.Entities
 {
     public class Channel
     {
-        private FosscordClient _client;
+        internal FosscordClient _client;
         
         [JsonProperty("id")]
         public string Id { get; set; }
@@ -70,13 +70,28 @@ namespace FosscordSharp.Entities
         
         public async Task<Invite> CreateInvite(int duration = 0, int max_uses = 0, bool temporary_membership = true)
         {
-            Util.Log($"Creating invite for {Id}/{Name}");
+            Util.LogDebug($"Creating invite for {Id}/{Name}");
             HttpResponseMessage resp = await _client._httpClient.PostAsJsonAsync($"/api/v9/channels/{Id}/invites",
                 new { max_age = duration, max_uses = max_uses, temporary = temporary_membership  });
-            
-            Util.Log(resp.ToString());
-            Util.Log(await resp.Content.ReadAsStringAsync());
-            return await resp.Content.ReadFromJsonAsync<Invite>();
+            Invite invite = await resp.Content.ReadFromJsonAsync<Invite>();
+            invite._client = _client;
+            return invite;
+        }
+
+        public async Task<Message[]> GetMessages(ulong? before = null, ulong? after = null, int? amount = 100)
+        {
+            if(before == null && after == null) before = UInt64.MaxValue;
+            Util.LogDebug($"Fetching {amount} messages {(after == null ? $"before {before}" : $"after {after}")}");
+            Util.LogDebug(await _client._httpClient.GetStringAsync($"/api/v9/channels/{Id}/messages?amount={amount}&{(after == null ? "before="+before : "after="+after)}"));
+            return await _client._httpClient.GetFromJsonAsync<Message[]>($"/api/v9/channels/{Id}/messages?amount={amount}&{(after == null ? "before="+before : "after="+after)}");
+        }
+
+        public async Task<Message> SendMessage(string content)
+        {
+            return JsonConvert.DeserializeObject<Message>(await (await _client._httpClient.PostAsJsonAsync($"/api/v9/channels/{Id}/messages", new
+            {
+                content = content
+            })).Content.ReadAsStringAsync());
         }
     }
 }

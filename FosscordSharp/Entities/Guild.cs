@@ -126,15 +126,18 @@ namespace FosscordSharp.Entities
             _client = client;
         }
 
-        public ulong id = 0;
+        // public ulong id = 0;
         public async Task<Channel[]> GetChannels()
         {
-            Util.Log("GetChannels called on guild " + id);
+            Util.Log("GetChannels called on guild " + Id);
             // await _client._httpClient.GetAsync($"");
             // Util.LogDebug($"/guilds/{id}/channels");
             // Util.LogDebug(await _client._httpClient.GetStringAsync($"/guilds/{id}/channels"));
-            var a = await _client._httpClient.GetFromJsonAsync<Channel[]>($"/api/guilds/{id}/channels");
-            Util.Log(a.Length+ " channels");
+            var a = await _client._httpClient.GetFromJsonAsync<Channel[]>($"/api/guilds/{Id}/channels");
+            foreach (var channel in a)
+            {
+                channel._client = _client;
+            }
             return a;
         }
     }

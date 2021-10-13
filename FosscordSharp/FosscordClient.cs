@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -21,7 +22,10 @@ namespace FosscordSharp
         public FosscordClient(FosscordClientConfig config)
         {
             _config = config;
-            _httpClient = new HttpClient(new LoggingHandler(new HttpClientHandler()))
+            _httpClient = config.Verbose ? new HttpClient(new LoggingHandler(new HttpClientHandler()))
+            {
+                BaseAddress = new Uri(_config.Endpoint)
+            } : new HttpClient()
             {
                 BaseAddress = new Uri(_config.Endpoint)
             };
@@ -37,21 +41,21 @@ namespace FosscordSharp
             {
                 if (_config.ShouldRegister)
                 {
-                    Util.Log("Account doesn't exist, registering");
+                    Util.LogDebug("Account doesn't exist, registering");
                     await Register();                    
                 }
                 else
                 {
-                    Util.Log("Account doesn't exist, registering disabled!");
+                    Util.LogDebug("Account doesn't exist, registering disabled!");
                 }
             }
             else
             {
-                Util.Log("Successfully logged in!");
+                Util.LogDebug("Successfully logged in!");
                 _loginResponse = JsonConvert.DeserializeObject<LoginResponse>(_resp);
                 _httpClient.DefaultRequestHeaders.Add("Authorization", _loginResponse.Token);
                 Util.LogDebug(_loginResponse.Token);
-                Util.Log("Set token!");
+                Util.LogDebug("Set token!");
             }
 
             return;
@@ -62,43 +66,31 @@ namespace FosscordSharp
             HttpResponseMessage resp = await _httpClient.PostAsJsonAsync("/api/v9/auth/register", new {email = _config.Email, password = _config.Password, consent = true, date_of_birth = _config.RegistrationOptions.DateOfBirth, username = _config.RegistrationOptions.Username}, CancellationToken.None);
             string _resp = await resp.Content.ReadAsStringAsync();
             // Console.WriteLine(_resp);
-            Util.Log("Successfully registered!");
+            Util.LogDebug("Successfully registered!");
             await Login();
             Guild defaultGuild = await CreateGuild(_config.RegistrationOptions.Username + "'s Official Discord!");
-            Util.Log($"Created default guild '{_config.RegistrationOptions.Username + "'s Official Discord!"}'");
+            Util.LogDebug($"Created default guild '{_config.RegistrationOptions.Username + "'s Official Discord!"}'");
             
             Channel[] channels = await defaultGuild.GetChannels();
-            Util.Log("Got channels");
-            Console.WriteLine(JsonConvert.SerializeObject(channels));
-            Util.Log($"Fetched {channels.Length} channels in default guild!");
-            Util.Log($"Default guild invite: {_config.Endpoint}/invite/{(await channels[0].CreateInvite(temporary_membership:false)).Code}");
+            Util.LogDebug("Got channels");
+            Util.LogDebug($"Fetched {channels.Length} channels in default guild!");
+            Util.LogDebug($"Default guild invite: {_config.Endpoint}/invite/{(await channels[0].CreateInvite(temporary_membership:false)).Code}");
         }
 
         public async Task<Guild[]> GetGuilds()
         {
-            var res = await _httpClient.GetStringAsync("/api/v9/users/@me/guilds");
-            Util.Log(res);
-            var aa = JsonConvert.DeserializeObject<GuildTemp[]>(res);
-            Util.Log("aa: "+aa.Length+"");
-            foreach (var temp in aa)
+            var res = JsonConvert.DeserializeObject<Guild[]>(await _httpClient.GetStringAsync("/api/v9/users/@me/guilds"));
+            foreach (var temp in res)
             {
-                Util.Log(temp.Id+"");
+                temp._client = this;
             }
-            
-            var a = JsonConvert.DeserializeObject<Guild[]>(res);
-            Util.Log(" a: "+a.Length+"");
-            foreach (var temp in a)
-            {
-                Util.Log(temp.Id+"");
-            }
-
-            
-            return new []{new Guild()};
+            return res;
             // return await _httpClient.GetFromJsonAsync<Guild[]>("/api/v9/users/@me/guilds");
         }
         public async Task<Guild> GetGuild(ulong id)
         {
-            return new Guild(this);
+            return (await GetGuilds()).First(x => x.Id == id);
+            // return new Guild(this);
         }
 
         public async Task<Guild> CreateGuild(string name)
@@ -107,15 +99,9 @@ namespace FosscordSharp
                 new { name = name });
             string _resp = await resp.Content.ReadAsStringAsync();
             var gr = JsonConvert.DeserializeObject<GuildCreatedResponse>(_resp);
-            string guildid = gr.id;
-            Util.Log("Got guild id " + guildid);
-        
-            Guild guild = new Guild(this)
-            {
-                id = gr.Id
-            };
-            Util.Log("Instantiated guild on creation");
-            return guild;
+            Util.LogDebug("Got guild id " + gr.Id);
+            
+            return await GetGuild(gr.Id);
         }
     }
 }

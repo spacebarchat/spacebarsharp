@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.VisualBasic;
 
 namespace FosscordSharp.Test
 {
@@ -33,7 +34,14 @@ namespace FosscordSharp.Test
             {
                 Email = "FosscordSharp@test.bot",
                 Password = "SomePassword",
-                Endpoint = "https://fosscord.thearcanebrony.net"
+                // Endpoint = "https://fosscord.thearcanebrony.net",
+                Endpoint = "http://localhost:3001",
+                RegistrationOptions =
+                {
+                    Username = "FosscordSharp Example Bot",
+                    DateOfBirth = "1969-01-01"
+                },
+                Verbose = false
             });
             await fc.Login();
             var gs = await fc.GetGuilds();
@@ -41,13 +49,16 @@ namespace FosscordSharp.Test
             foreach (var g in gs)
             {
                 Util.Log($"{g.Name}: ");
+                var cs = await g.GetChannels();
                 foreach (var c in await g.GetChannels())
                 {
-                    Util.Log($"- {c.Name}");
-                    
+                    Util.Log($"- {c.Name}: {(await c.CreateInvite()).FullUrl} ({(await c.GetMessages()).Length} messages)");
+                    Util.Log((await c.SendMessage("Hi from FosscordSharp!")).Id);
                 }
             }
-            Util.Log(client.GetGuilds().Result.Length + " guilds");
+            Util.Log(fc.GetGuilds().Result.Length + " guilds");
+            
+            
         }
     }
 }
