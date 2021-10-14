@@ -114,8 +114,13 @@ namespace FosscordSharp
 
                             break;
                         case 10: //Hello
-                            var x = msg.EventData?.GetType().GetField("heartbeat_interval").GetValue(msg.EventData);
-                            Util.Log($"Heartbeat interval: {x as int?}");
+                            Util.Log("WebSocket: Hello!");
+                            var a= msg.EventData?.Property("heartbeat_interval")?.Value.ToObject<int>();
+                            Util.Log($"Heartbeat interval: {a}");
+                            new Timer(state =>
+                            {
+                                // ws.SendAsync()
+                            });
                             break;
                         case 11: //Heartbeat ACK
 
@@ -124,6 +129,7 @@ namespace FosscordSharp
                             Util.Log($"Unknown opcode {msg.OpCode}! Report this!");
                             break;
                     }
+                    Util.Log("Passed switch block!");
                 }
             }
 
