@@ -34,8 +34,8 @@ namespace FosscordSharp.Test
             {
                 Email = "FosscordSharp@test.bot",
                 Password = "SomePassword",
-                // Endpoint = "https://fosscord.thearcanebrony.net",
-                Endpoint = "http://localhost:3001",
+                Endpoint = "https://fosscord.thearcanebrony.net",
+                // Endpoint = "http://localhost:3001",
                 RegistrationOptions =
                 {
                     Username = "FosscordSharp Example Bot",
@@ -57,8 +57,6 @@ namespace FosscordSharp.Test
                 }
             }
             Util.Log(fc.GetGuilds().Result.Length + " guilds");
-            
-            
         }
     }
 }
