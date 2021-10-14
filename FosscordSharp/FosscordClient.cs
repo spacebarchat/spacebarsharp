@@ -21,6 +21,7 @@ namespace FosscordSharp
         internal FosscordClientConfig _config;
         internal HttpClient _httpClient;
         internal LoginResponse _loginResponse;
+        
 
         public FosscordClient(FosscordClientConfig config)
         {
@@ -71,6 +72,39 @@ namespace FosscordSharp
                 var rcvBytes = new byte[128];
                 var rcvBuffer = new ArraySegment<byte>(rcvBytes);
                 var cts = new CancellationTokenSource();
+                int? seq_id = null;
+
+                byte[] ident = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(new
+                {
+                    op = 2,
+                    d = new
+                    {
+                        token = _loginResponse.Token,
+                        properties = new
+                        {
+                            os = "windows",
+                            browser = "fosscordsharp",
+                            device = "something"
+                        },
+                        compress = false,
+                        large_treshold = 250,
+                        presence = new
+                        {
+                            activities = new
+                                object[]
+                                {
+                                    new
+                                    {
+                                        name = "FosscordSharp bot",
+                                        type = 0
+                                    }
+                                },
+                            status = "online",
+                            afk = false
+                        }
+                    }
+                }));
+                ArraySegment<Byte> identpk = new ArraySegment<Byte>(ident, 0, ident.Length);
                 while (true)
                 {
                     WebSocketReceiveResult rcvResult = await ws.ReceiveAsync(rcvBuffer, cts.Token);
@@ -79,57 +113,75 @@ namespace FosscordSharp
                     Console.WriteLine("Received: {0}", rcvMsg);
                     WebsocketMessage msg = JsonConvert.DeserializeObject<WebsocketMessage>(rcvMsg);
                     Util.Log($"Deserialized msg: {msg != null}!");
-                    Util.Log(JsonConvert.SerializeObject(msg));
-                    Util.Log($"rcv opcode {msg.OpCode}");
-                    switch (msg.OpCode)
+                    if (msg != null)
                     {
-                        case 0: //Dispatch
 
-                            break;
-                        case 1: //Heartbeat
+                        Util.Log(JsonConvert.SerializeObject(msg));
+                        Util.Log($"rcv opcode {msg.OpCode}");
+                        seq_id = msg.SequenceNum ?? seq_id;
 
-                            break;
-                        case 2: //Identify
+                        byte[] hb = Encoding.UTF8.GetBytes("{\"op\": 1, \"d\": " + seq_id + "}");
+                        ArraySegment<Byte> buffer = new ArraySegment<Byte>(hb, 0, hb.Length);
+                        switch (msg.OpCode)
+                        {
+                            case 0: //Dispatch
 
-                            break;
-                        case 3: //Presence Update
+                                break;
+                            case 1: //Heartbeat
+                                Util.Log("Sending heartbeat..");
+                                await ws.SendAsync(buffer, WebSocketMessageType.Text, false, CancellationToken.None);
+                                break;
+                            case 2: //Identify
 
-                            break;
-                        case 4: //Voice state update
+                                break;
+                            case 3: //Presence Update
 
-                            break;
-                        case 5: //Resume
+                                break;
+                            case 4: //Voice state update
 
-                            break;
-                        case 6: //resume
+                                break;
+                            case 6: //resume
 
-                            break;
-                        case 7: //Reconnect
+                                break;
+                            case 7: //Reconnect
 
-                            break;
-                        case 8: //Request Guild Members (send)
+                                break;
+                            case 8: //Request Guild Members (send)
 
-                            break;
-                        case 9: //Invalid session
+                                break;
+                            case 9: //Invalid session
 
-                            break;
-                        case 10: //Hello
-                            Util.Log("WebSocket: Hello!");
-                            var a= msg.EventData?.Property("heartbeat_interval")?.Value.ToObject<int>();
-                            Util.Log($"Heartbeat interval: {a}");
-                            new Timer(state =>
-                            {
-                                // ws.SendAsync()
-                            });
-                            break;
-                        case 11: //Heartbeat ACK
+                                break;
+                            case 10: //Hello
+                                Util.Log("WebSocket: Hello!");
+                                var a = msg.EventData?.Property("heartbeat_interval")?.Value.ToObject<int>();
+                                Util.Log($"Heartbeat interval: {a}");
 
-                            break;
-                        default:
-                            Util.Log($"Unknown opcode {msg.OpCode}! Report this!");
-                            break;
+                                Util.Log("Sending ident..");
+                                await ws.SendAsync(identpk, WebSocketMessageType.Text, false, CancellationToken.None);
+
+                                Util.Log("Sending heartbeat..");
+                                await ws.SendAsync(buffer, WebSocketMessageType.Text, false, CancellationToken.None);
+                                var t = new System.Timers.Timer((double)a!);
+                                t.Enabled = true;
+                                t.Elapsed += (_, _) =>
+                                {
+                                    Util.Log("Sending heartbeat..");
+                                    ws.SendAsync(buffer, WebSocketMessageType.Text, false, CancellationToken.None);
+                                    Util.Log("HB SENT");
+                                };
+                                t.Start();
+                                break;
+                            case 11: //Heartbeat ACK
+                                Util.Log("Heartbeat ACK");
+                                break;
+                            default:
+                                Util.Log($"Unknown opcode {msg.OpCode}! Report this!");
+                                break;
+                        }
+
+                        Util.Log("Passed switch block!");
                     }
-                    Util.Log("Passed switch block!");
                 }
             }
 
