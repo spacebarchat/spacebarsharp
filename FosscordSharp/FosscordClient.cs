@@ -66,7 +66,7 @@ namespace FosscordSharp
                 ClientWebSocket ws = new();
                 await ws.ConnectAsync(
                     new Uri(
-                        $"ws://{_config.Endpoint.Replace("https://", "").Replace("http://", "")}?encoding=json&v=9"),
+                        $"wss://{_config.Endpoint.Replace("https://", "").Replace("http://", "")}?encoding=json&v=9"),
                     new CancellationToken());
                 Util.LogDebug("Connected to websocket!");
                 var rcvBytes = new byte[128];
@@ -115,7 +115,6 @@ namespace FosscordSharp
                     Util.Log($"Deserialized msg: {msg != null}!");
                     if (msg != null)
                     {
-
                         Util.Log(JsonConvert.SerializeObject(msg));
                         Util.Log($"rcv opcode {msg.OpCode}");
                         seq_id = msg.SequenceNum ?? seq_id;
@@ -125,14 +124,14 @@ namespace FosscordSharp
                         switch (msg.OpCode)
                         {
                             case 0: //Dispatch
-
+                                Util.Log("WS: Event dispatched!");
                                 break;
                             case 1: //Heartbeat
                                 Util.Log("Sending heartbeat..");
                                 await ws.SendAsync(buffer, WebSocketMessageType.Text, false, CancellationToken.None);
                                 break;
                             case 2: //Identify
-
+                                Util.Log("WS: invalid msg identify");
                                 break;
                             case 3: //Presence Update
 
@@ -141,16 +140,15 @@ namespace FosscordSharp
 
                                 break;
                             case 6: //resume
-
+                                Util.Log("WS: invalid msg resume");
                                 break;
                             case 7: //Reconnect
-
+                                Util.Log("WS: Reconnect!");
                                 break;
                             case 8: //Request Guild Members (send)
-
                                 break;
                             case 9: //Invalid session
-
+                                Util.Log("WS: invalid session!");
                                 break;
                             case 10: //Hello
                                 Util.Log("WebSocket: Hello!");
@@ -160,13 +158,12 @@ namespace FosscordSharp
                                 Util.Log("Sending ident..");
                                 await ws.SendAsync(identpk, WebSocketMessageType.Text, false, CancellationToken.None);
 
-                                Util.Log("Sending heartbeat..");
-                                await ws.SendAsync(buffer, WebSocketMessageType.Text, false, CancellationToken.None);
-                                var t = new System.Timers.Timer((double)a!);
+                                var t = new System.Timers.Timer((double)a!/2d);
                                 t.Enabled = true;
                                 t.Elapsed += (_, _) =>
                                 {
                                     Util.Log("Sending heartbeat..");
+                                    Util.Log(Encoding.UTF8.GetString(hb));
                                     ws.SendAsync(buffer, WebSocketMessageType.Text, false, CancellationToken.None);
                                     Util.Log("HB SENT");
                                 };
@@ -181,6 +178,17 @@ namespace FosscordSharp
                         }
 
                         Util.Log("Passed switch block!");
+                    }
+                    else
+                    {
+                        Util.Log("ws: invalid msg received!");
+                        Util.Log($"WS state: {ws.State}");
+                            Util.Log($"WS close msg {ws.CloseStatus}");
+                            await ws.ConnectAsync(
+                                new Uri(
+                                    $"wss://{_config.Endpoint.Replace("https://", "").Replace("http://", "")}?encoding=json&v=9"),
+                                new CancellationToken());
+                            Util.Log("WS: Reconnected");
                     }
                 }
             }

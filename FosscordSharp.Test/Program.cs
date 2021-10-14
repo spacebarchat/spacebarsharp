@@ -1,4 +1,6 @@
 ﻿using System;
+using System.IO;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.VisualBasic;
@@ -18,21 +20,22 @@ namespace FosscordSharp.Test
         static async Task run()
         {
             Random rnd = new Random();
-            FosscordClient client = new(new()
-            {
-                Email = $"FosscordSharp{rnd.Next()}@test.bot",
-                Password = "SomePassword",
-                Endpoint = "https://fosscord.thearcanebrony.net",
-                RegistrationOptions =
-                {
-                    Username = "FosscordSharp Test Bot"
-                }
-            });
+            // FosscordClient client = new(new()
+            // {
+            //     Email = $"FosscordSharp{rnd.Next()}@test.bot",
+            //     Password = "SomePassword",
+            //     Endpoint = "https://fosscord.thearcanebrony.net",
+            //     RegistrationOptions =
+            //     {
+            //         Username = "FosscordSharp Test Bot"
+            //     }
+            // });
             // await client.Login();
 
             FosscordClient fc = new FosscordClient(new()
             {
                 Email = "FosscordSharp@test.bot",
+                // Password = File.ReadAllText(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)+"/.ssh/id_rsa.pub"),
                 Password = "SomePassword",
                 Endpoint = "https://fosscord.thearcanebrony.net",
                 // Endpoint = "http://localhost:3001",
