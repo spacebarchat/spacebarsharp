@@ -4,6 +4,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FosscordSharp", "FosscordSh
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FosscordSharp.Test", "FosscordSharp.Test\FosscordSharp.Test.csproj", "{71933DC6-2039-4203-927C-E8A39C56AACB}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FosscordSharp.UnitTests", "FosscordSharp.UnitTests\FosscordSharp.UnitTests.csproj", "{36EB2987-7650-4143-957D-159F79D3F7BE}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -18,5 +20,9 @@ Global
 		{71933DC6-2039-4203-927C-E8A39C56AACB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{71933DC6-2039-4203-927C-E8A39C56AACB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{71933DC6-2039-4203-927C-E8A39C56AACB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{36EB2987-7650-4143-957D-159F79D3F7BE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{36EB2987-7650-4143-957D-159F79D3F7BE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{36EB2987-7650-4143-957D-159F79D3F7BE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{36EB2987-7650-4143-957D-159F79D3F7BE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

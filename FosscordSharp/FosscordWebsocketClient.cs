@@ -17,7 +17,7 @@ namespace FosscordSharp
         internal ClientWebSocket ws = new();
         private int? seq_id = null;
         private ArraySegment<Byte> identpk;
-        
+
         public FosscordWebsocketClient(FosscordClient client)
         {
             _client = client;
@@ -81,7 +81,7 @@ namespace FosscordSharp
                     $"wss://{_client._config.Endpoint.Replace("https://", "").Replace("http://", "")}?encoding=json&v=9"),
                 CancellationToken.None);
             Util.LogDebug("Connected to websocket!");
-            var rcvBytes = new byte[128];
+            var rcvBytes = new byte[4096];
             var rcvBuffer = new ArraySegment<byte>(rcvBytes);
             WebSocketReceiveResult rcvResult;
             Task.Run(async () =>
@@ -110,7 +110,7 @@ namespace FosscordSharp
                         await ws.ConnectAsync(
                             new Uri(
                                 $"wss://{_client._config.Endpoint.Replace("https://", "").Replace("http://", "")}?encoding=json&v=9"),
-                            new CancellationToken());
+                            CancellationToken.None);
                         Util.LogDebug("WS: Reconnected");
                     }
                 }
@@ -126,7 +126,8 @@ namespace FosscordSharp
                     break;
                 case 1: //Heartbeat
                     Util.Log("Sending heartbeat..");
-                    await ws.SendAsync(("{\"op\": 1, \"d\": " + seq_id + "}").ToArraySegment(), WebSocketMessageType.Text, false, CancellationToken.None);
+                    await ws.SendAsync(("{\"op\": 1, \"d\": " + seq_id + "}").ToArraySegment(),
+                        WebSocketMessageType.Text, false, CancellationToken.None);
                     Util.Log("Heartbeat success!");
                     break;
                 case 2: //Identify
@@ -143,25 +144,32 @@ namespace FosscordSharp
                     break;
                 case 7: //Reconnect
                     Util.Log("WS: Reconnect!");
+                    await ws.CloseAsync(WebSocketCloseStatus.Empty, null, CancellationToken.None);
+                    await ws.ConnectAsync(
+                        new Uri(
+                            $"wss://{_client._config.Endpoint.Replace("https://", "").Replace("http://", "")}?encoding=json&v=9"),
+                        CancellationToken.None);
+                    Util.LogDebug("WS: Reconnected");
                     break;
                 case 8: //Request Guild Members (send)
                     break;
                 case 9: //Invalid session
-                    Util.Log("WS: invalid session!");
+                    Util.LogDebug("WS: invalid session!");
                     break;
                 case 10: //Hello
-                    Util.Log("WebSocket: Hello!");
+                    Util.LogDebug("WebSocket: Hello!");
                     var a = msg.EventData?.Property("heartbeat_interval")?.Value.ToObject<int>();
-                    Util.Log($"Heartbeat interval: {a}");
+                    Util.LogDebug($"Heartbeat interval: {a}");
 
-                    Util.Log("Sending ident..");
+                    Util.LogDebug("Sending ident..");
                     await ws.SendAsync(identpk, WebSocketMessageType.Text, false, CancellationToken.None);
-
+                    Util.LogDebug("Ident sent!");
                     var t = new System.Timers.Timer((double)a! / 2d);
                     t.Enabled = true;
                     t.Elapsed += (_, _) =>
                     {
-                        HandleWSMessage(new() { OpCode = 1 });
+                        if (ws.State != WebSocketState.Open) HandleWSMessage(new WebsocketMessage() { OpCode = 7 });
+                        else HandleWSMessage(new() { OpCode = 1 });
                     };
                     t.Start();
                     break;

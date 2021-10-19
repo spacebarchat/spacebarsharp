@@ -70,9 +70,9 @@ namespace FosscordSharp
                 Util.LogDebug(_loginResponse.Token);
                 Util.LogDebug("Set token!");
                 Util.Log("Logged in on REST API!");
-                _wscli = new FosscordWebsocketClient(this);
-                await _wscli.Start();
-                Util.Log("Logged in on WS API!");
+                // _wscli = new FosscordWebsocketClient(this);
+                // await _wscli.Start();
+                // Util.Log("Logged in on WS API!");
             }
 
             return;
@@ -126,7 +126,8 @@ namespace FosscordSharp
         /// <returns>Guild</returns>
         public async Task<Guild> GetGuild(ulong id)
         {
-            return (await GetGuilds()).First(x => x.Id == id);
+            Guild[] guilds = await GetGuilds();
+            return (guilds).First(x => x.Id == id);
             // return new Guild(this);
         }
         
@@ -141,20 +142,20 @@ namespace FosscordSharp
                 new { name = name });
             string _resp = await resp.Content.ReadAsStringAsync();
             var gr = JsonConvert.DeserializeObject<GuildCreatedResponse>(_resp);
-            Util.LogDebug("Got guild id " + gr.Id);
+            Util.LogDebug("Got guild id " + gr.id);
 
-            return await GetGuild(gr.Id);
+            return await GetGuild(gr.id);
         }
 
         public async Task<Guild> JoinGuild(string code)
         {
-            HttpResponseMessage resp = await _httpClient.PostAsJsonAsync("/api/v9/guilds",
+            HttpResponseMessage resp = await _httpClient.PostAsJsonAsync($"/api/v9/invites/{code}",
                 new { });
-            string _resp = await resp.Content.ReadAsStringAsync();
-            var gr = JsonConvert.DeserializeObject<GuildCreatedResponse>(_resp);
-            Util.LogDebug("Got guild id " + gr.Id);
-
-            return await GetGuild(gr.Id);
+            // Util.Log(await resp.Content.ReadAsStringAsync());
+            var gr = JsonConvert.DeserializeObject<Invite>(await resp.Content.ReadAsStringAsync());
+            Util.LogDebug("Got guild id " + gr.GuildId);
+            
+            return await GetGuild(gr.GuildId);
         }
     }
 }

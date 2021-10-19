@@ -88,10 +88,11 @@ namespace FosscordSharp.Entities
 
         public async Task<Message> SendMessage(string content)
         {
-            return JsonConvert.DeserializeObject<Message>(await (await _client._httpClient.PostAsJsonAsync($"/api/v9/channels/{Id}/messages", new
+            string _resp = await (await _client._httpClient.PostAsJsonAsync($"/api/v9/channels/{Id}/messages", new
             {
                 content = content
-            })).Content.ReadAsStringAsync());
+            })).Content.ReadAsStringAsync();
+            return JsonConvert.DeserializeObject<Message>(_resp);
         }
     }
 }
