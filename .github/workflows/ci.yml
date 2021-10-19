@@ -17,7 +17,7 @@ jobs:
           dotnet-version: '5.0.x'
       - name: Discord webhook
         run: |
-          curl -i -H "Accept: application/json" -H "Content-Type: application/json" -X POST --data "{\"content\": \"<:fox_wave_duckmaster:900151686616715306> New commit by $GITHUB_ACTOR: [commit](<$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/commit/$GITHUB_SHA>), [run](<$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID?check_suite_focus=true>)\"}" ${{ secrets.DISCORD_WEBHOOK }}
+          curl -i -H "Accept: application/json" -H "Content-Type: application/json" -X POST --data "{\"content\": \"<:fox_wave_duckmaster:900151686616715306> New commit by $GITHUB_ACTOR: [commit]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/commit/$GITHUB_SHA), [run](<$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID?check_suite_focus=true>)\"}" ${{ secrets.DISCORD_WEBHOOK }}
       - name: Install dependencies
         run: dotnet restore
       - name: Build
