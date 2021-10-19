@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Newtonsoft.Json;
 
 namespace FosscordSharp.Entities
@@ -61,5 +62,10 @@ namespace FosscordSharp.Entities
         [JsonProperty("mention_channels")] public List<object> MentionChannels { get; set; }
 
         [JsonProperty("attachments")] public List<object> Attachments { get; set; }
+
+        public async Task Delete()
+        {
+            await _client._httpClient.DeleteAsync($"/api/v9/channels/{ChannelId}/messages/{Id}");
+        }
     }
 }

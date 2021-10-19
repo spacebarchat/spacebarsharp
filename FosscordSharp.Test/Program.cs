@@ -69,6 +69,7 @@ namespace FosscordSharp.Test
                 {
                     Util.Log($"- {c.Name}: {(await c.CreateInvite()).FullUrl} ({(await c.GetMessages()).Length} messages)");
                     Util.Log((await c.SendMessage("Hi from FosscordSharp!")).Id);
+                    await (await c.SendMessage("Hi from FosscordSharp!")).Delete();
                 }
             }
             Util.Log(fc.GetGuilds().Result.Length + " guilds");

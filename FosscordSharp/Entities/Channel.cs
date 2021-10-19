@@ -82,8 +82,13 @@ namespace FosscordSharp.Entities
         {
             if(before == null && after == null) before = UInt64.MaxValue;
             Util.LogDebug($"Fetching {amount} messages {(after == null ? $"before {before}" : $"after {after}")}");
-            Util.LogDebug(await _client._httpClient.GetStringAsync($"/api/v9/channels/{Id}/messages?amount={amount}&{(after == null ? "before="+before : "after="+after)}"));
-            return await _client._httpClient.GetFromJsonAsync<Message[]>($"/api/v9/channels/{Id}/messages?amount={amount}&{(after == null ? "before="+before : "after="+after)}");
+            // Util.LogDebug(await _client._httpClient.GetStringAsync($"/api/v9/channels/{Id}/messages?amount={amount}&{(after == null ? "before="+before : "after="+after)}"));
+            var msgs = await _client._httpClient.GetFromJsonAsync<Message[]>($"/api/v9/channels/{Id}/messages?amount={amount}&{(after == null ? "before=" + before : "after=" + after)}");
+            foreach (var msg in msgs)
+            {
+                msg._client = _client;
+            }
+            return msgs;
         }
 
         public async Task<Message> SendMessage(string content)
@@ -92,7 +97,9 @@ namespace FosscordSharp.Entities
             {
                 content = content
             })).Content.ReadAsStringAsync();
-            return JsonConvert.DeserializeObject<Message>(_resp);
+            var msg = JsonConvert.DeserializeObject<Message>(_resp);
+            msg._client = _client;
+            return msg;
         }
     }
 }
