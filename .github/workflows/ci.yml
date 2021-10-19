@@ -15,6 +15,9 @@ jobs:
         uses: actions/setup-dotnet@v1
         with:
           dotnet-version: '5.0.x'
+      - name: Discord webhook
+        run: |
+          curl -i -H "Accept: application/json" -H "Content-Type: application/json" -X POST --data "{\"content\": \"<:fox_wave_duckmaster:900151686616715306> New commit by $GITHUB_ACTOR: [commit](<$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/commit/$GITHUB_SHA>), [run](<$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID?check_suite_focus=true>)\"}" ${{ secrets.DISCORD_WEBHOOK }}
       - name: Install dependencies
         run: dotnet restore
       - name: Build
@@ -29,10 +32,10 @@ jobs:
         if: ${{ success() }}
       - name: Publish success
         run: |
-          curl -i -H "Accept: application/json" -H "Content-Type: application/json" -X POST --data "{\"content\": \"<:foxSip:899416354728329217> Build, test and publish successful! ([See run]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID?check_suite_focus=true))\"}" ${{ secrets.DISCORD_WEBHOOK }}
+          curl -i -H "Accept: application/json" -H "Content-Type: application/json" -X POST --data "{\"content\": \"<:foxSip:899416354728329217> Build, test and publish successful! ([See run](<$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID?check_suite_focus=true>))\"}" ${{ secrets.DISCORD_WEBHOOK }}
         if: ${{ success() }}
       - name: Publish failure
         run: |
-          curl -i -H "Accept: application/json" -H "Content-Type: application/json" -X POST --data "{\"content\": \"<:fox_cry_storfus:900093667405070396> Build, test or publish failed! ([See run]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID?check_suite_focus=true))\"}" ${{ secrets.DISCORD_WEBHOOK }}
+          curl -i -H "Accept: application/json" -H "Content-Type: application/json" -X POST --data "{\"content\": \"<:fox_cry_storfus:900093667405070396> Build, test or publish failed! ([See run](<$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID?check_suite_focus=true>))\"}" ${{ secrets.DISCORD_WEBHOOK }}
         if: ${{ failure() }}
         
