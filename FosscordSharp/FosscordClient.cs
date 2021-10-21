@@ -7,6 +7,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Net.WebSockets;
 using System.Text;
+using System.Text.Encodings.Web;
 using System.Threading;
 using System.Threading.Tasks;
 using FosscordSharp.Entities;
@@ -21,7 +22,7 @@ namespace FosscordSharp
     {
         internal FosscordClientConfig _config;
         internal HttpClient _httpClient;
-        internal LoginResponse _loginResponse;
+        internal RegisterResponse _loginResponse;
         internal FosscordWebsocketClient _wscli;
         
         /// <summary>
@@ -50,39 +51,21 @@ namespace FosscordSharp
             var loginResp = await this.PostJsonAsync<LoginResponse>("/api/v9/auth/login", new { Login = _config.Email, password = _config.Password, undelete = false });
             if (loginResp.IsT1)
             {
-                Util.Log("Login failed: " + loginResp.AsT1);
-                throw new Exception(loginResp.AsT1.ToString());
-                return;
-            }
-            HttpResponseMessage resp = await _httpClient.PostAsJsonAsync("/api/v9/auth/login",
-                new { Login = _config.Email, password = _config.Password, undelete = false }, CancellationToken.None);
-            string _resp = await resp.Content.ReadAsStringAsync();
-            // Console.WriteLine(_resp);
-            if (_resp.Contains("E-Mail or Phone not found"))
-            {
-                if (_config.ShouldRegister)
+                Util.Log("Login failed: " + loginResp.AsT1.Errors.First().Value.Errors[0].Message);
+                if (loginResp.AsT1.Errors.First().Value.Errors[0].Code == "INVALID_LOGIN")
                 {
-                    Util.LogDebug("Account doesn't exist, registering");
-                    await Register();
+                    if (_config.ShouldRegister) await Register();
+                    else throw new UnauthorizedAccessException("User does not exist!");
+                    return;
                 }
-                else
-                {
-                    Util.LogDebug("Account doesn't exist, registering disabled!");
-                }
+                else throw new Exception(loginResp.AsT1.ToString());
             }
-            else
-            {
-                Util.LogDebug("Successfully logged in!");
-                _loginResponse = JsonConvert.DeserializeObject<LoginResponse>(_resp);
-                _httpClient.DefaultRequestHeaders.Add("Authorization", _loginResponse.Token);
-                Util.LogDebug(_loginResponse.Token);
-                Util.LogDebug("Set token!");
-                Util.Log("Logged in on REST API!");
-                // _wscli = new FosscordWebsocketClient(this);
-                // await _wscli.Start();
-                // Util.Log("Logged in on WS API!");
-            }
-
+            _loginResponse = loginResp.AsT0;
+            _httpClient.DefaultRequestHeaders.Add("Authorization", _loginResponse.Token);
+            Util.Log("Logged in on REST API!");
+            // _wscli = new FosscordWebsocketClient(this);
+            // await _wscli.Start();
+            // Util.Log("Logged in on WS API!");
             return;
         }
         /// <summary>
@@ -90,25 +73,26 @@ namespace FosscordSharp
         /// </summary>
         private async Task Register()
         {
-            HttpResponseMessage resp = await _httpClient.PostAsJsonAsync("/api/v9/auth/register",
-                new
-                {
-                    email = _config.Email, password = _config.Password, consent = true,
-                    date_of_birth = _config.RegistrationOptions.DateOfBirth,
-                    username = _config.RegistrationOptions.Username
-                }, CancellationToken.None);
-            string _resp = await resp.Content.ReadAsStringAsync();
-            // Console.WriteLine(_resp);
-            Util.LogDebug("Successfully registered!");
-            await Login();
-            Guild defaultGuild = await CreateGuild(_config.RegistrationOptions.Username + "'s Official Discord!");
-            Util.LogDebug($"Created default guild '{_config.RegistrationOptions.Username + "'s Official Discord!"}'");
+            var resp = await this.PostJsonAsync<RegisterResponse>("/api/v9/auth/register", new
+            {
+                email = _config.Email, password = _config.Password, consent = true,
+                date_of_birth = _config.RegistrationOptions.DateOfBirth,
+                username = _config.RegistrationOptions.Username
+            });
+            if (resp.IsT1)
+            {
+                throw new Exception(resp.AsT1.ToString());
+            }
+            _loginResponse = resp.AsT0;
+            _httpClient.DefaultRequestHeaders.Add("Authorization", _loginResponse.Token);
+            Util.Log("Registered and logged in on REST API!");
+            if(_config.RegistrationOptions.CreateBotGuild){
+                Guild defaultGuild = await CreateGuild(_config.RegistrationOptions.Username + "'s Official Discord!");
+                Util.LogDebug($"Created default guild '{defaultGuild.Name}'");
 
-            Channel[] channels = await defaultGuild.GetChannels();
-            Util.LogDebug("Got channels");
-            Util.LogDebug($"Fetched {channels.Length} channels in default guild!");
-            Util.LogDebug(
-                $"Default guild invite: {_config.Endpoint}/invite/{(await channels[0].CreateInvite(temporary_membership: false)).Code}");
+                Channel[] channels = await defaultGuild.GetChannels();
+                Util.LogDebug($"Default guild invite: {_config.Endpoint}/invite/{(await channels[0].CreateInvite(temporary_membership: false)).Code}");
+            }
         }
         /// <summary>
         /// Gets all guilds the bot is in
@@ -151,6 +135,18 @@ namespace FosscordSharp
             if (g.IsT1) throw new Exception(g.AsT1 + "");
             Thread.Sleep(100);
             return await GetGuild(g.AsT0.GuildId);
+        }
+
+        public async Task<User> GetUser(int id = 0)
+        {
+            var g = await this.GetAsync<User>($"/api/v9/users/" + (id == 0 ? "@me" : id));
+            if (g.IsT1) throw new Exception(g.AsT1 + "");
+            return g.AsT0;
+        }
+
+        public async Task<User> GetCurrentUser()
+        {
+            return await GetUser();
         }
     }
 }

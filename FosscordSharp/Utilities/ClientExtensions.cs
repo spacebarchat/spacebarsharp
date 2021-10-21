@@ -33,38 +33,47 @@ namespace FosscordSharp.Utilities
         }
         public static async Task<OneOf<T, ErrorResponse>> PostJsonAsync<T>(this FosscordClient cli, string url, object data)
         {
-            int i = 0;
-            Util.Log("Post step " + ++i); //1
-            var _resp = await cli._httpClient.PostAsJsonAsync(url, data);
-            Util.Log("Post step " + ++i); //2
-            var resp = await _resp.Content.ReadAsStringAsync();
-            Util.Log("Post step " + ++i);//3
-            if(cli._config.Verbose) Util.Log(resp);
-            Util.Log("Post step " + ++i);//4
-            if(!_resp.IsSuccessStatusCode) return JsonConvert.DeserializeObject<ErrorResponse>(resp);
-            Util.Log("Post step " + ++i);//5
-            var obj = JsonConvert.DeserializeObject<T>(resp);
-            Util.Log("Post step " + ++i);//6
-            if (obj.GetType().IsArray)
+            try
             {
-                Util.Log("obj is array");
-                foreach (var a in obj as T[])
+                var _resp = await cli._httpClient.PostAsJsonAsync(url, data);
+                var resp = await _resp.Content.ReadAsStringAsync();
+                if (cli._config.Verbose) Util.Log(resp);
+                if (!_resp.IsSuccessStatusCode)
                 {
-                    Util.Log("obj[] setting client");
-                    ((a as FosscordObject)!)._client = cli; 
-                    
-                }                
-            }
-            else
-            {
-                Util.Log("obj is not array");
-                ((obj as FosscordObject)!)._client = cli;    
-                Util.Log("Set _client");
-            }
-            Util.Log("Post step " + ++i);//7
+                    try
+                    {
+                        return JsonConvert.DeserializeObject<ErrorResponse>(resp);
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine(e);
+                        
+                    }
+                }
+                var obj = JsonConvert.DeserializeObject<T>(resp);
+                if (obj.GetType().IsArray)
+                {
+                    // Util.Log("obj is array");
+                    foreach (var a in obj as T[])
+                    {
+                        // Util.Log("obj[] setting client");
+                        ((a as FosscordObject)!)._client = cli;
+                    }
+                }
+                else
+                {
+                    // Util.LogDebugStdout("obj is not array");
+                    ((obj as FosscordObject)!)._client = cli;
+                    // Util.LogDebugStdout("Set _client");
+                }
 
-            
-            return obj;
+                return obj;
+            }
+            catch(Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
         }
     }
 }

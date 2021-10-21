@@ -23,5 +23,16 @@ namespace FosscordSharp
             if(Debugger.IsAttached) Debug.WriteLine("{0}:{1} {2}", Path.GetFileName(file), line, message);
             else if(LogAlways) Debug.WriteLine(message);
         }
+        public static void LogDebugStdout(string message,
+            bool LogAlways = false,
+            [CallerFilePath] string file = null,
+            [CallerLineNumber] int line = 0)          
+        {
+#if DEBUG
+            if(Debugger.IsAttached) Console.WriteLine("{0}:{1} {2}", Path.GetFileName(file), line, message);
+            else if(LogAlways) Console.WriteLine(message);
+#endif
+        }
+
     }
 }

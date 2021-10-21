@@ -98,7 +98,7 @@ namespace FosscordSharp.Entities
 
         public async Task<Channel[]> GetChannels()
         {
-            Util.Log("GetChannels called on guild " + Id);
+            // Util.Log("GetChannels called on guild " + Id);
             var a = await _client._httpClient.GetFromJsonAsync<Channel[]>($"/api/guilds/{Id}/channels");
             foreach (var channel in a)
             {

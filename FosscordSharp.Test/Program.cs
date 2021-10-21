@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using FosscordSharp.Entities;
 using Microsoft.VisualBasic;
+using Newtonsoft.Json;
 
 namespace FosscordSharp.Test
 {
@@ -51,7 +52,7 @@ namespace FosscordSharp.Test
                     }
                 });
                 await client.Login();
-                invites.Add((await (await (await client.CreateGuild($"F#{i}:")).GetChannels())[0].CreateInvite(1000)).Code);
+                invites.Add((await (await (await client.CreateGuild($"FC#{i}:")).GetChannels())[0].CreateInvite(1000)).Code);
             }
 
             foreach (var invite in invites)

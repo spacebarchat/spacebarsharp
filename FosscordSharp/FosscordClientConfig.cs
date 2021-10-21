@@ -16,5 +16,6 @@ namespace FosscordSharp
     {
         public string Username { get; set; } = "Unknown bot";
         public string DateOfBirth { get; set; } = "1970-01-01";
+        public bool CreateBotGuild { get; set; } = false;
     }
 }
