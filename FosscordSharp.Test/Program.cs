@@ -4,6 +4,7 @@ using System.IO;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
+using FosscordSharp.Entities;
 using Microsoft.VisualBasic;
 
 namespace FosscordSharp.Test
@@ -14,14 +15,12 @@ namespace FosscordSharp.Test
         {
             Console.WriteLine("Hello World!");
             run();
-            
             Thread.Sleep(int.MaxValue);
         }
 
         static async Task run()
         {
             Random rnd = new Random();
-            
 
             FosscordClient fc = new FosscordClient(new()
             {

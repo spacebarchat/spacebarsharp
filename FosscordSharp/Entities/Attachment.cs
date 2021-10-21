@@ -1,8 +1,9 @@
 using System;
+using FosscordSharp.Core;
 
 namespace FosscordSharp.Entities
 {
-    public partial class Attachment
+    public partial class Attachment : FosscordObject
     {
         public string Id { get; set; }
         public string Filename { get; set; }

@@ -1,14 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using FosscordSharp.Core;
 using Newtonsoft.Json;
 
 namespace FosscordSharp.Entities
 {
-    public class Message
+    public class Message : FosscordObject
     {
-        internal FosscordClient _client;
-
         [JsonProperty("id")] public string Id { get; set; }
 
         [JsonProperty("channel_id")] public string ChannelId { get; set; }

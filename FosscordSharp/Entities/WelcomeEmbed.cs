@@ -1,8 +1,9 @@
 using System;
+using FosscordSharp.Core;
 
 namespace FosscordSharp.Entities
 {
-    public partial class WelcomeEmbed
+    public partial class WelcomeEmbed : FosscordObject
     {
         public string Type { get; set; }
         public Uri Url { get; set; }

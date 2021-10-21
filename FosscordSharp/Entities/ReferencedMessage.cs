@@ -1,9 +1,10 @@
 using System;
 using System.Collections.Generic;
+using FosscordSharp.Core;
 
 namespace FosscordSharp.Entities
 {
-    public partial class ReferencedMessage
+    public partial class ReferencedMessage : FosscordObject
     {
         public string Id { get; set; }
         public long Type { get; set; }

@@ -11,6 +11,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using FosscordSharp.Entities;
 using FosscordSharp.ResponseTypes;
+using FosscordSharp.Utilities;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -46,6 +47,13 @@ namespace FosscordSharp
         public async Task Login()
         {
             Util.Log("Attempting login");
+            var loginResp = await this.PostJsonAsync<LoginResponse>("/api/v9/auth/login", new { Login = _config.Email, password = _config.Password, undelete = false });
+            if (loginResp.IsT1)
+            {
+                Util.Log("Login failed: " + loginResp.AsT1);
+                throw new Exception(loginResp.AsT1.ToString());
+                return;
+            }
             HttpResponseMessage resp = await _httpClient.PostAsJsonAsync("/api/v9/auth/login",
                 new { Login = _config.Email, password = _config.Password, undelete = false }, CancellationToken.None);
             string _resp = await resp.Content.ReadAsStringAsync();
@@ -108,15 +116,9 @@ namespace FosscordSharp
         /// <returns>List of guilds the bot is in</returns>
         public async Task<Guild[]> GetGuilds()
         {
-            var res = JsonConvert.DeserializeObject<Guild[]>(
-                await _httpClient.GetStringAsync("/api/v9/users/@me/guilds"));
-            foreach (var temp in res)
-            {
-                temp._client = this;
-            }
-
-            return res;
-            // return await _httpClient.GetFromJsonAsync<Guild[]>("/api/v9/users/@me/guilds");
+            var res = await this.GetAsync<Guild[]>("/api/v9/users/@me/guilds");
+            if (!res.IsT0) throw new Exception(res.AsT1 + "");
+            return res.AsT0;
         }
 
         /// <summary>
@@ -127,8 +129,8 @@ namespace FosscordSharp
         public async Task<Guild> GetGuild(ulong id)
         {
             Guild[] guilds = await GetGuilds();
+            if (!guilds.Any(x => x.Id == id)) throw new NullReferenceException("Not a member of this guild!");
             return (guilds).First(x => x.Id == id);
-            // return new Guild(this);
         }
         
         /// <summary>
@@ -138,24 +140,17 @@ namespace FosscordSharp
         /// <returns>Newly created guild</returns>
         public async Task<Guild> CreateGuild(string name)
         {
-            HttpResponseMessage resp = await _httpClient.PostAsJsonAsync("/api/v9/guilds",
-                new { name = name });
-            string _resp = await resp.Content.ReadAsStringAsync();
-            var gr = JsonConvert.DeserializeObject<GuildCreatedResponse>(_resp);
-            Util.LogDebug("Got guild id " + gr.id);
-
-            return await GetGuild(gr.id);
+            var res = await this.PostJsonAsync<GuildCreatedResponse>("/api/v9/guilds", new { name = name });
+            if (res.IsT1) throw new Exception(res.AsT1 + "");
+            return await GetGuild(res.AsT0.id);
         }
 
         public async Task<Guild> JoinGuild(string code)
         {
-            HttpResponseMessage resp = await _httpClient.PostAsJsonAsync($"/api/v9/invites/{code}",
-                new { });
-            // Util.Log(await resp.Content.ReadAsStringAsync());
-            var gr = JsonConvert.DeserializeObject<Invite>(await resp.Content.ReadAsStringAsync());
-            Util.LogDebug("Got guild id " + gr.GuildId);
-            
-            return await GetGuild(gr.GuildId);
+            var g = await this.PostJsonAsync<Invite>($"/api/v9/invites/{code}", new { });
+            if (g.IsT1) throw new Exception(g.AsT1 + "");
+            Thread.Sleep(100);
+            return await GetGuild(g.AsT0.GuildId);
         }
     }
 }

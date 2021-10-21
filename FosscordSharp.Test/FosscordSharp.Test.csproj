@@ -12,6 +12,7 @@
 
     <ItemGroup>
       <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+      <PackageReference Include="OneOf" Version="3.0.201" />
       <PackageReference Include="System.Net.Http.Json" Version="6.0.0-rc.2.21480.5" />
     </ItemGroup>
 

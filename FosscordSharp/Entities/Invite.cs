@@ -1,12 +1,11 @@
 using System;
+using FosscordSharp.Core;
 using Newtonsoft.Json;
 
 namespace FosscordSharp.Entities
 {
-    public class Invite
+    public class Invite : FosscordObject
     {
-        internal FosscordClient _client;
-
         [JsonProperty("code")] public string Code { get; set; }
 
         [JsonProperty("temporary")] public bool Temporary { get; set; }

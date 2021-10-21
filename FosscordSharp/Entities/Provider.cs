@@ -1,8 +1,9 @@
+using FosscordSharp.Core;
 using Newtonsoft.Json;
 
 namespace FosscordSharp.Entities
 {
-    public class Provider
+    public class Provider : FosscordObject
     {
         [JsonProperty("name")]
         public string Name { get; set; }
