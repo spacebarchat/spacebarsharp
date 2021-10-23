@@ -4,13 +4,14 @@ using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
 using FosscordSharp.Core;
+using FosscordSharp.Utilities;
 using Newtonsoft.Json;
 
 namespace FosscordSharp.Entities
 {
     public class Channel : FosscordObject
     {
-        [JsonProperty("id")] public string Id { get; set; }
+        [JsonProperty("id")] public ulong Id { get; set; }
 
         [JsonProperty("created_at")] public DateTime CreatedAt { get; set; }
 
@@ -20,7 +21,7 @@ namespace FosscordSharp.Entities
 
         [JsonProperty("type")] public int Type { get; set; }
 
-        [JsonProperty("last_message_id")] public object LastMessageId { get; set; }
+        [JsonProperty("last_message_id")] public ulong? LastMessageId { get; set; }
 
         [JsonProperty("guild_id")] public string GuildId { get; set; }
 
@@ -64,14 +65,13 @@ namespace FosscordSharp.Entities
         {
             if (before == null && after == null) before = UInt64.MaxValue;
             Util.LogDebug($"Fetching {amount} messages {(after == null ? $"before {before}" : $"after {after}")}");
-            // Util.LogDebug(await _client._httpClient.GetStringAsync($"/api/v9/channels/{Id}/messages?amount={amount}&{(after == null ? "before="+before : "after="+after)}"));
-            var msgs = await _client._httpClient.GetFromJsonAsync<Message[]>($"/api/v9/channels/{Id}/messages?amount={amount}&{(after == null ? "before=" + before : "after=" + after)}");
-            foreach (var msg in msgs)
+            var msgs = await _client.GetAsync<Message[]>($"/api/v9/channels/{Id}/messages?amount={amount}&{(after == null ? "before=" + before : "after=" + after)}");
+            if (msgs.IsT1)
             {
-                msg._client = _client;
+                throw new Exception(msgs.AsT1.ToString());
             }
 
-            return msgs;
+            return msgs.AsT0;
         }
 
         public async Task<Message> SendMessage(string content)

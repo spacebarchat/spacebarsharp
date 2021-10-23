@@ -1,21 +1,23 @@
 ﻿using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using FosscordSharp.Entities;
+using FosscordSharp.EventArgs;
 
 namespace FosscordSharp.ExampleBot
 {
     class Program
     {
+        private static FosscordClient client;
         static void Main(string[] args)
         {
             Run();
             Thread.Sleep(int.MaxValue);
         }
-
         static async void Run()
         {
-            FosscordClient client = new FosscordClient(new()
+            client = new FosscordClient(new()
             {
                 Email = $"FosscordSharp{Environment.TickCount64}@example.com",
                 Password = "FosscordSharp",
@@ -27,13 +29,18 @@ namespace FosscordSharp.ExampleBot
                     Username = "FosscordSharp Example Bot",
                     DateOfBirth = "1969-01-01",
                     CreateBotGuild = true
-                }
+                },
+                PollMessages = true
             });
             await client.Login();
             User botUser = await client.GetCurrentUser();
             Console.WriteLine($"Logged in as {botUser.Username}#{botUser.Discriminator} ({botUser.Id})!");
+            client.MessageReceived += ClientOnMessageReceived;
             Guild[] guilds = await client.GetGuilds();
             Console.WriteLine($"I am in {guilds.Length} guilds");
+            await client.JoinGuild("qFlTsl");
+            guilds = await client.GetGuilds();
+            Console.WriteLine($"I am in {guilds.Length} guilds*");
             foreach (var guild in guilds)
             {
                 Console.WriteLine($" - {guild.Name} ({guild.Id})");
@@ -55,6 +62,27 @@ namespace FosscordSharp.ExampleBot
                         Console.WriteLine($"Could not send message in {guild.Name}#{channel.Name}");
                     }
                 }
+            }
+        }
+
+        private static async void ClientOnMessageReceived(object? sender, MessageReceivedEventArgs e)
+        {
+            Console.WriteLine("Message received: "+e.Message.Content);
+            if (e.Message.Content.StartsWith("!"))
+            {
+                var guild = await client.GetGuild(e.Message.GuildId);
+                var channel = await guild.GetChannel(e.Message.ChannelId);
+                var _ = e.Message.Content.Split(" ");
+                var command = _[0][1..];
+                var args = _.Skip(1).ToArray();
+                switch (command)
+                {
+                    case "ping":
+                        await channel.SendMessage("pong!");
+                        break;
+                    default: break;
+                }
+                
             }
         }
     }

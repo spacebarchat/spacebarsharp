@@ -11,7 +11,9 @@ using System.Text.Encodings.Web;
 using System.Threading;
 using System.Threading.Tasks;
 using FosscordSharp.Entities;
+using FosscordSharp.EventArgs;
 using FosscordSharp.ResponseTypes;
+using FosscordSharp.Services;
 using FosscordSharp.Utilities;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -58,7 +60,8 @@ namespace FosscordSharp
                     else throw new UnauthorizedAccessException("User does not exist!");
                     return;
                 }
-                else throw new Exception(loginResp.AsT1.ToString());
+
+                throw new Exception(loginResp.AsT1.ToString());
             }
             _loginResponse = loginResp.AsT0;
             _httpClient.DefaultRequestHeaders.Add("Authorization", _loginResponse.Token);
@@ -66,7 +69,7 @@ namespace FosscordSharp
             // _wscli = new FosscordWebsocketClient(this);
             // await _wscli.Start();
             // Util.Log("Logged in on WS API!");
-            return;
+            // PostLogin();
         }
         /// <summary>
         /// Register a new account
@@ -92,6 +95,21 @@ namespace FosscordSharp
 
                 Channel[] channels = await defaultGuild.GetChannels();
                 Util.LogDebug($"Default guild invite: {_config.Endpoint}/invite/{(await channels[0].CreateInvite(temporary_membership: false)).Code}");
+            }
+
+            // _wscli = new FosscordWebsocketClient(this);
+            // await _wscli.Start();
+            // Util.Log("Logged in on WS API!");
+            // PostLogin();
+        }
+
+        internal void PostLogin()
+        {
+            if (_config.PollMessages)
+            {
+                Util.Log("Starting poller");
+                new MessagePoller(this).Start();
+                Util.Log("Started poller");
             }
         }
         /// <summary>
@@ -148,5 +166,18 @@ namespace FosscordSharp
         {
             return await GetUser();
         }
+        
+        
+        #region events
+
+        public event EventHandler<MessageReceivedEventArgs> MessageReceived;
+
+        public virtual void OnMessageReceived(MessageReceivedEventArgs e)
+        {
+            EventHandler<MessageReceivedEventArgs> handler = MessageReceived;
+            handler.Invoke(this, e);
+        }
+
+        #endregion
     }
 }

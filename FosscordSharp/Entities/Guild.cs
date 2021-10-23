@@ -1,7 +1,10 @@
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
 using FosscordSharp.Core;
+using FosscordSharp.Utilities;
 using Newtonsoft.Json;
 
 namespace FosscordSharp.Entities
@@ -98,14 +101,20 @@ namespace FosscordSharp.Entities
 
         public async Task<Channel[]> GetChannels()
         {
-            // Util.Log("GetChannels called on guild " + Id);
-            var a = await _client._httpClient.GetFromJsonAsync<Channel[]>($"/api/guilds/{Id}/channels");
-            foreach (var channel in a)
+            var res = await _client.GetAsync<Channel[]>($"/api/guilds/{Id}/channels");
+            if (res.IsT1)
             {
-                channel._client = _client;
+                throw new Exception(res.AsT1.ToString());
             }
 
-            return a;
+            return res.AsT0;
+        }
+
+        public async Task<Channel> GetChannel(ulong id)
+        {
+            var channels = await GetChannels();
+            if (!channels.Any(x => x.Id == id)) throw new NullReferenceException("Channel doesn't exist!");
+            return channels.First(x => x.Id == id);
         }
     }
 

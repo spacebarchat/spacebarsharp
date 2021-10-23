@@ -1,9 +1,12 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Net;
 using System.Net.Http.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using FosscordSharp.Core;
+using FosscordSharp.ResponseTypes;
 using Newtonsoft.Json;
 using OneOf;
 
@@ -16,7 +19,17 @@ namespace FosscordSharp.Utilities
             var _resp = await cli._httpClient.GetAsync(url);
             var resp = await _resp.Content.ReadAsStringAsync();
             if(cli._config.Verbose) Util.Log(resp);
-            if (!_resp.IsSuccessStatusCode) return JsonConvert.DeserializeObject<ErrorResponse>(resp);
+            if (!_resp.IsSuccessStatusCode)
+            {
+                if (_resp.StatusCode == HttpStatusCode.TooManyRequests)
+                {
+                    var ratelimit = JsonConvert.DeserializeObject<RateLimitResponse>(resp);
+                    Console.WriteLine($"Ratelimited, trying again in {ratelimit.RetryAfter} seconds (endpoint: {url})");
+                    Thread.Sleep((int)(ratelimit.RetryAfter*1000));
+                    return await GetAsync<T>(cli, url);
+                }
+                return JsonConvert.DeserializeObject<ErrorResponse>(resp);
+            }
             object obj = JsonConvert.DeserializeObject<T>(resp);
             if (obj.GetType().IsArray)
             {
@@ -40,6 +53,13 @@ namespace FosscordSharp.Utilities
                 if (cli._config.Verbose) Util.Log(resp);
                 if (!_resp.IsSuccessStatusCode)
                 {
+                    if (_resp.StatusCode == HttpStatusCode.TooManyRequests)
+                    {
+                        var ratelimit = JsonConvert.DeserializeObject<RateLimitResponse>(resp);
+                        Console.WriteLine($"Ratelimited, trying again in {ratelimit.RetryAfter} seconds (endpoint: {url})");
+                        Thread.Sleep((int)(ratelimit.RetryAfter*1000));
+                        return await PostJsonAsync<T>(cli, url, data);
+                    }
                     try
                     {
                         return JsonConvert.DeserializeObject<ErrorResponse>(resp);

@@ -8,11 +8,11 @@ namespace FosscordSharp.Entities
 {
     public class Message : FosscordObject
     {
-        [JsonProperty("id")] public string Id { get; set; }
+        [JsonProperty("id")] public ulong Id { get; set; }
 
-        [JsonProperty("channel_id")] public string ChannelId { get; set; }
+        [JsonProperty("channel_id")] public ulong ChannelId { get; set; }
 
-        [JsonProperty("guild_id")] public string GuildId { get; set; }
+        [JsonProperty("guild_id")] public ulong GuildId { get; set; }
 
         [JsonProperty("author_id")] public string AuthorId { get; set; }
 

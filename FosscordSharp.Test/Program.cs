@@ -35,7 +35,9 @@ namespace FosscordSharp.Test
                     Username = "FosscordSharp Example Bot",
                     DateOfBirth = "1969-01-01"
                 },
-                Verbose = false
+                Verbose = false,
+                PollMessages = true,
+                ShouldRegister = true
             });
             await fc.Login();
             List<string> invites = new();
@@ -68,7 +70,7 @@ namespace FosscordSharp.Test
                 foreach (var c in await g.GetChannels())
                 {
                     Util.Log($"- {c.Name}: {(await c.CreateInvite()).FullUrl} ({(await c.GetMessages()).Length} messages)");
-                    Util.Log((await c.SendMessage("Hi from FosscordSharp!")).Id);
+                    Util.Log((await c.SendMessage("Hi from FosscordSharp!")).Id+"");
                     await (await c.SendMessage("Hi from FosscordSharp!")).Delete();
                 }
             }
