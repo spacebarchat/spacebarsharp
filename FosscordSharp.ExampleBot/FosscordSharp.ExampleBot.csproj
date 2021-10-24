@@ -9,4 +9,8 @@
       <ProjectReference Include="..\FosscordSharp\FosscordSharp.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <PackageReference Include="WebSocket4Net" Version="0.15.2" />
+    </ItemGroup>
+
 </Project>

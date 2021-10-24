@@ -5,25 +5,17 @@ namespace FosscordSharp.WebsocketData
 {
     internal class Identify
     {
-        internal string token;
+        public string token;
 
-        internal Properties properties;
-        internal bool compress;
-        internal int large_treshold;
-
-        public Identify()
-        {
-            Util.Log("aa");
-        }
+        public Properties properties;
+        public bool compress;
+        // public int large_treshold;
 
         internal class Properties
         {
-            [JsonProperty("$os")]
-            internal string os;
-            [JsonProperty("$browser")]
-            internal string browser;
-            [JsonProperty("$device")]
-            internal string device;
+            [JsonProperty("$os")] public string os;
+            [JsonProperty("$browser")] public string browser;
+            [JsonProperty("$device")] public string device;
         }
     }
 }

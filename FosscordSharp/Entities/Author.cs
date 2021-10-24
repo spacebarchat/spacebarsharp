@@ -1,8 +1,9 @@
+using FosscordSharp.Core;
 using Newtonsoft.Json;
 
 namespace FosscordSharp.Entities
 {
-    public class Author
+    public class Author : FosscordObject
     {
         [JsonProperty("id")]
         public string Id { get; set; }
@@ -14,7 +15,7 @@ namespace FosscordSharp.Entities
         public string Discriminator { get; set; }
 
         [JsonProperty("avatar")]
-        public object Avatar { get; set; }
+        public string Avatar { get; set; }
 
         [JsonProperty("accent_color")]
         public object AccentColor { get; set; }
@@ -30,5 +31,7 @@ namespace FosscordSharp.Entities
 
         [JsonProperty("public_flags")]
         public int PublicFlags { get; set; }
+
+        public string AvatarUrl => _client._httpClient.BaseAddress + "/avatars/" + Id + "/" + Avatar + ".png?size=8192";
     }
 }

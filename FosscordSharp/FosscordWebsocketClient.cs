@@ -1,31 +1,34 @@
 using System;
+using System.IO;
 using System.Linq;
 using System.Net.WebSockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using FosscordSharp.Entities;
 using FosscordSharp.Utilities;
 using FosscordSharp.WebsocketData;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using WebSocket = WebSocket4Net.WebSocket;
+using WebSocketState = WebSocket4Net.WebSocketState;
 
 namespace FosscordSharp
 {
     public class FosscordWebsocketClient
     {
         internal FosscordClient _client;
-        internal ClientWebSocket ws = new();
+        internal WebSocket ws;
         private int? seq_id = null;
-        private ArraySegment<Byte> identpk;
+        private string ident;
 
         public FosscordWebsocketClient(FosscordClient client)
         {
             _client = client;
-            Util.Log("a");
             var ide = new WebsocketMessage()
             {
                 OpCode = 2,
-                EventData = JObject.FromObject(new Identify()
+                EventData = new Identify()
                 {
                     token = _client._loginResponse.Token,
                     properties = new()
@@ -35,120 +38,81 @@ namespace FosscordSharp
                         os = "windows"
                     },
                     compress = false,
-                    large_treshold = 250
-                })
+                    // large_treshold = 250
+                }
             };
-            Util.Log("aaa");
-            identpk = JsonConvert.SerializeObject(ide).ToArraySegment();
-            // identpk = JsonConvert.SerializeObject(new WebsocketMessage()
-            // {
-            //     OpCode = 2,
-            //     EventData = new JObject(new
-            //     {
-            //         token = _client._loginResponse.Token,
-            //         properties = new
-            //         {
-            //             os = "windows",
-            //             browser = "fosscordsharp",
-            //             device = "something"
-            //         },
-            //         compress = false,
-            //         large_treshold = 250,
-            //         presence = new
-            //         {
-            //             activities = new
-            //                 object[]
-            //                 {
-            //                     new
-            //                     {
-            //                         name = "FosscordSharp bot",
-            //                         type = 0
-            //                     }
-            //                 },
-            //             status = "online",
-            //             afk = false
-            //         }
-            //     })
-            // }).ToArraySegment();
-            Util.Log("b");
+            ident = JsonConvert.SerializeObject(ide);
         }
 
         public async Task Start()
         {
-            Util.Log("initialising websocket");
-            await ws.ConnectAsync(
-                new Uri(
-                    $"wss://{_client._config.Endpoint.Replace("https://", "").Replace("http://", "")}?encoding=json&v=9"),
-                CancellationToken.None);
-            Util.LogDebug("Connected to websocket!");
-            var rcvBytes = new byte[4096];
-            var rcvBuffer = new ArraySegment<byte>(rcvBytes);
-            WebSocketReceiveResult rcvResult;
-            Task.Run(async () =>
+            ws = new WebSocket($"wss://{_client._config.Endpoint.Replace("https://", "").Replace("http://", "")}?encoding=json&v=9");
+            ws.MessageReceived += (sender, args) =>
             {
-                while (true)
-                {
-                    rcvResult = await ws.ReceiveAsync(rcvBuffer, CancellationToken.None);
-                    byte[] msgBytes = rcvBuffer.Skip(rcvBuffer.Offset).Take(rcvResult.Count).ToArray();
-                    string rcvMsg = Encoding.UTF8.GetString(msgBytes);
-                    Util.LogDebug($"Received: {rcvMsg}");
-                    WebsocketMessage msg = JsonConvert.DeserializeObject<WebsocketMessage>(rcvMsg);
-                    Util.Log($"Deserialized msg: {msg != null}!");
-                    if (msg != null)
-                    {
-                        Util.LogDebug(JsonConvert.SerializeObject(msg));
-                        Util.LogDebug($"rcv opcode {msg.OpCode}");
-                        seq_id = msg.SequenceNum ?? seq_id;
-                        await HandleWSMessage(msg);
-                    }
-                    else
-                    {
-                        Util.LogDebug($"WS state: {ws.State}");
-                        Util.LogDebug($"WS close msg {ws.CloseStatus}");
-                        await ws.CloseAsync(WebSocketCloseStatus.NormalClosure, "Received invalid message",
-                            CancellationToken.None);
-                        await ws.ConnectAsync(
-                            new Uri(
-                                $"wss://{_client._config.Endpoint.Replace("https://", "").Replace("http://", "")}?encoding=json&v=9"),
-                            CancellationToken.None);
-                        Util.LogDebug("WS: Reconnected");
-                    }
-                }
-            }, CancellationToken.None);
+                // Console.WriteLine("Websocket message received: " + args.Message);
+                HandleWSMessage(JsonConvert.DeserializeObject<WebsocketMessage>(args.Message));
+            };
+            ws.Opened += (sender, args) =>
+            {
+                Util.Log("WebSocket opened");
+            };
+            ws.Closed += (sender, args) =>
+            {
+                Util.Log("WebSocket closed");
+                ws.Open();
+            };
+            ws.Error += (sender, args) =>
+            {
+                Util.Log("WebSocket errored");
+            };
+            ws.Open();
         }
 
         private async Task HandleWSMessage(WebsocketMessage msg)
         {
+            // Console.WriteLine(JsonConvert.SerializeObject(new ExplainedWebsocketMessage(msg)));
             switch (msg.OpCode)
             {
                 case 0: //Dispatch
-                    Util.Log("WS: Event dispatched!");
+                    // Util.Log("WS: Event dispatched!");
+                    switch (msg.EventName)
+                    {
+                        case "MESSAGE_CREATE":
+                            var m = JsonConvert.DeserializeObject<Message>(JsonConvert.SerializeObject(msg.EventData));
+                            m._client = _client;
+                            m.SetClientInTree(_client);
+                            _client.OnMessageReceived(new()
+                            {
+                                Message = m
+                            });
+                            break;
+                        default:
+                            Util.LogDebug("Unknown dispatch event: " + JsonConvert.SerializeObject(new ExplainedWebsocketMessage(msg)));
+                            break;
+                    }
+                    File.WriteAllText("dispatch.txt", JsonConvert.SerializeObject(msg, Formatting.Indented));
                     break;
                 case 1: //Heartbeat
-                    Util.Log("Sending heartbeat..");
-                    await ws.SendAsync(("{\"op\": 1, \"d\": " + seq_id + "}").ToArraySegment(),
-                        WebSocketMessageType.Text, false, CancellationToken.None);
-                    Util.Log("Heartbeat success!");
+                    // Util.Log("Sending heartbeat..");
+                    ws.Send(JsonConvert.SerializeObject(new WebsocketMessage(){OpCode = 1, EventData = seq_id}));
+                    // Util.Log("Heartbeat success!");
                     break;
                 case 2: //Identify
                     Util.Log("WS: invalid msg identify");
                     break;
                 case 3: //Presence Update
-
+        
                     break;
                 case 4: //Voice state update
-
+        
                     break;
                 case 6: //resume
                     Util.Log("WS: invalid msg resume");
                     break;
                 case 7: //Reconnect
                     Util.Log("WS: Reconnect!");
-                    await ws.CloseAsync(WebSocketCloseStatus.Empty, null, CancellationToken.None);
-                    await ws.ConnectAsync(
-                        new Uri(
-                            $"wss://{_client._config.Endpoint.Replace("https://", "").Replace("http://", "")}?encoding=json&v=9"),
-                        CancellationToken.None);
+                    ws.Close();
+                    // ws.Open();
                     Util.LogDebug("WS: Reconnected");
                     break;
                 case 8: //Request Guild Members (send)
@@ -157,13 +121,13 @@ namespace FosscordSharp
                     Util.LogDebug("WS: invalid session!");
                     break;
                 case 10: //Hello
-                    Util.LogDebug("WebSocket: Hello!");
-                    var a = msg.EventData?.Property("heartbeat_interval")?.Value.ToObject<int>();
-                    Util.LogDebug($"Heartbeat interval: {a}");
-
-                    Util.LogDebug("Sending ident..");
-                    await ws.SendAsync(identpk, WebSocketMessageType.Text, false, CancellationToken.None);
-                    Util.LogDebug("Ident sent!");
+                    Util.LogDebugStdout("WebSocket: Hello!");
+                    var a = ((JObject)msg.EventData)?.Property("heartbeat_interval")?.Value.ToObject<int>();
+                    Util.LogDebugStdout($"Heartbeat interval: {a}");
+                    
+                     ws.Send(ident);
+                    Util.LogDebugStdout("Sent: " + ident);
+                    
                     var t = new System.Timers.Timer((double)a! / 2d);
                     t.Enabled = true;
                     t.Elapsed += (_, _) =>
@@ -174,14 +138,14 @@ namespace FosscordSharp
                     t.Start();
                     break;
                 case 11: //Heartbeat ACK
-                    Util.Log("Heartbeat ACK");
+                    // Util.Log("Heartbeat ACK");
                     break;
                 default:
                     Util.Log($"Unknown opcode {msg.OpCode}! Report this!");
                     break;
             }
-
-            Util.Log("Passed switch block!");
+        
+            // Util.Log("Passed switch block!");
         }
     }
 }

@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using FosscordSharp.Entities;
 using FosscordSharp.EventArgs;
+using Microsoft.VisualBasic;
 
 namespace FosscordSharp.ExampleBot
 {
@@ -22,6 +23,7 @@ namespace FosscordSharp.ExampleBot
                 Email = $"FosscordSharp{Environment.TickCount64}@example.com",
                 Password = "FosscordSharp",
                 Endpoint = "https://dev.fosscord.com",
+                // Endpoint = "https://fosscord.thearcanebrony.net",
                 Verbose = false,
                 ShouldRegister = true,
                 RegistrationOptions =
@@ -30,7 +32,7 @@ namespace FosscordSharp.ExampleBot
                     DateOfBirth = "1969-01-01",
                     CreateBotGuild = true
                 },
-                PollMessages = true
+                PollMessages = false
             });
             await client.Login();
             User botUser = await client.GetCurrentUser();
@@ -77,8 +79,19 @@ namespace FosscordSharp.ExampleBot
                 var args = _.Skip(1).ToArray();
                 switch (command)
                 {
+                    case "help":
+                        await channel.SendMessage("Fosscord Example Bot command list:\n" +
+                                                  "```diff\n" +
+                                                  " - ping: Pong!\n" +
+                                                  " - avatar: Get avatar url.\n" +
+                                                  " - guildlist: Get guild + channel list.\n" +
+                                                  "```");
+                        break;
                     case "ping":
                         await channel.SendMessage("pong!");
+                        break;
+                    case "avatar":
+                        await channel.SendMessage($"Your avatar url: {e.Message.Author.AvatarUrl}");
                         break;
                     default: break;
                 }
