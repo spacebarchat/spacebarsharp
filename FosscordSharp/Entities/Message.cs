@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using FosscordSharp.Core;
+using FosscordSharp.Utilities;
 using Newtonsoft.Json;
 
 namespace FosscordSharp.Entities
@@ -64,7 +65,7 @@ namespace FosscordSharp.Entities
 
         public async Task Delete()
         {
-            await _client._httpClient.DeleteAsync($"/api/v9/channels/{ChannelId}/messages/{Id}");
+            await _client.DeleteAsync<object>($"/api/v9/channels/{ChannelId}/messages/{Id}");
         }
     }
 }

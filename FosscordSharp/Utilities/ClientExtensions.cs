@@ -95,5 +95,35 @@ namespace FosscordSharp.Utilities
                 throw;
             }
         }
+        public static async Task<OneOf<T, ErrorResponse>> DeleteAsync<T>(this FosscordClient cli, string url) where T : class
+        {
+            var _resp = await cli._httpClient.DeleteAsync(url);
+            var resp = await _resp.Content.ReadAsStringAsync();
+            if(cli._config.Verbose) Util.Log(resp);
+            if (!_resp.IsSuccessStatusCode)
+            {
+                if (_resp.StatusCode == HttpStatusCode.TooManyRequests)
+                {
+                    var ratelimit = JsonConvert.DeserializeObject<RateLimitResponse>(resp);
+                    Console.WriteLine($"Ratelimited, trying again in {ratelimit.RetryAfter} seconds (endpoint: {url})");
+                    Thread.Sleep((int)(ratelimit.RetryAfter*1000));
+                    return await GetAsync<T>(cli, url);
+                }
+                return JsonConvert.DeserializeObject<ErrorResponse>(resp);
+            }
+            object obj = JsonConvert.DeserializeObject<T>(resp);
+            if (obj.GetType().IsArray)
+            {
+                foreach (var a in (IEnumerable)obj)
+                {
+                    ((a as FosscordObject)!)._client = cli;    
+                }
+            }
+            else
+            {
+                ((obj as FosscordObject)!)._client = cli;                
+            }
+            return (T)obj;
+        }
     }
 }

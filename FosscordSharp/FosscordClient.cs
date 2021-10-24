@@ -96,10 +96,10 @@ namespace FosscordSharp
                 Channel[] channels = await defaultGuild.GetChannels();
                 Util.LogDebug($"Default guild invite: {_config.Endpoint}/invite/{(await channels[0].CreateInvite(temporary_membership: false)).Code}");
             }
-
-            // _wscli = new FosscordWebsocketClient(this);
-            // await _wscli.Start();
-            // Util.Log("Logged in on WS API!");
+            
+            _wscli = new FosscordWebsocketClient(this);
+            await _wscli.Start();
+            Util.Log("Logged in on WS API!");
             // PostLogin();
         }
 

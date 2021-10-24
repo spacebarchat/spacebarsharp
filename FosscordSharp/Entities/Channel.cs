@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using FosscordSharp.Core;
 using FosscordSharp.Utilities;
 using Newtonsoft.Json;
+using OneOf;
 
 namespace FosscordSharp.Entities
 {
@@ -54,11 +55,14 @@ namespace FosscordSharp.Entities
         public async Task<Invite> CreateInvite(int duration = 0, int max_uses = 0, bool temporary_membership = true)
         {
             Util.LogDebug($"Creating invite for {Id}/{Name}");
-            HttpResponseMessage resp = await _client._httpClient.PostAsJsonAsync($"/api/v9/channels/{Id}/invites",
+            var resp = await _client.PostJsonAsync<Invite>($"/api/v9/channels/{Id}/invites",
                 new { max_age = duration, max_uses = max_uses, temporary = temporary_membership });
-            Invite invite = await resp.Content.ReadFromJsonAsync<Invite>();
-            invite._client = _client;
-            return invite;
+            if (resp.IsT1)
+            {
+                throw new Exception(resp.AsT1.ToString());
+            }
+            
+            return resp.AsT0;
         }
 
         public async Task<Message[]> GetMessages(ulong? before = null, ulong? after = null, int? amount = 100)
@@ -76,13 +80,17 @@ namespace FosscordSharp.Entities
 
         public async Task<Message> SendMessage(string content)
         {
-            string _resp = await (await _client._httpClient.PostAsJsonAsync($"/api/v9/channels/{Id}/messages", new
+            var resp = await _client.PostJsonAsync<Message>($"/api/v9/channels/{Id}/messages", new
             {
                 content = content
-            })).Content.ReadAsStringAsync();
-            var msg = JsonConvert.DeserializeObject<Message>(_resp);
-            msg._client = _client;
-            return msg;
+            });
+            
+            if (resp.IsT1)
+            {
+                throw new Exception(resp.AsT1.ToString());
+            }
+
+            return resp.AsT0;
         }
     }
 }
