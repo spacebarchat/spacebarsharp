@@ -11,6 +11,7 @@ namespace FosscordSharp
         public RegistrationOptions RegistrationOptions { get; set; } = new();
         public bool Verbose { get; set; } = false;
         public bool PollMessages { get; set; } = false;
+        public bool JoinDmInvites { get; set; } = false;
     }
 
     public class RegistrationOptions

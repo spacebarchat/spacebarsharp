@@ -20,7 +20,8 @@ namespace FosscordSharp.ExampleBot
         {
             client = new FosscordClient(new()
             {
-                Email = $"FosscordSharp{Environment.TickCount64}@example.com",
+                // Email = $"FosscordSharp{Environment.TickCount64}@example.com",
+                Email = $"FosscordSharpDev@example.com",
                 Password = "FosscordSharp",
                 Endpoint = "https://dev.fosscord.com",
                 // Endpoint = "https://fosscord.thearcanebrony.net",
@@ -40,7 +41,11 @@ namespace FosscordSharp.ExampleBot
             client.MessageReceived += ClientOnMessageReceived;
             Guild[] guilds = await client.GetGuilds();
             Console.WriteLine($"I am in {guilds.Length} guilds");
-            await client.JoinGuild("qFlTsl");
+            try
+            {
+             
+                await client.JoinGuild("qFlTsl");   
+            } catch { }
             guilds = await client.GetGuilds();
             Console.WriteLine($"I am in {guilds.Length} guilds*");
             foreach (var guild in guilds)
@@ -92,6 +97,17 @@ namespace FosscordSharp.ExampleBot
                         break;
                     case "avatar":
                         await channel.SendMessage($"Your avatar url: {e.Message.Author.AvatarUrl}");
+                        break;
+                    case "guildlist":
+                        await channel.SendMessage("Guild list:");
+                        foreach (var g in await client.GetGuilds())
+                        {
+                            await channel.SendMessage(g.Name);
+                            foreach (var c in await g.GetChannels())
+                            {
+                                await channel.SendMessage($" - {c.Name}: {(await c.CreateInvite()).FullUrl}");
+                            }
+                        }
                         break;
                     default: break;
                 }

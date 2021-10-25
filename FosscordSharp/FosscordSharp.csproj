@@ -6,6 +6,7 @@
         <Nullable>enable</Nullable>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
         <VersionPrefix>0.0.0.1</VersionPrefix>
+        <VersionSuffix>-dev</VersionSuffix>
         <Title>FosscordSharp</Title>
         <Description>Fosscord bot library</Description>
         <PackageProjectUrl>https://github.com/fosscord/fosscord-sharp</PackageProjectUrl>

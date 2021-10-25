@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Net.WebSockets;
+using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -33,9 +34,9 @@ namespace FosscordSharp
                     token = _client._loginResponse.Token,
                     properties = new()
                     {
-                        browser = "fosscordsharp",
-                        device = "something",
-                        os = "windows"
+                        browser = "FosscordSharp/"+RuntimeInfo.LibVersion,
+                        device = "idk",
+                        os = "no idea"
                     },
                     compress = false,
                     // large_treshold = 250
@@ -65,6 +66,7 @@ namespace FosscordSharp
             {
                 Util.Log("WebSocket errored");
             };
+            Console.WriteLine("Connecting to websocket!");
             ws.Open();
         }
 
@@ -87,10 +89,12 @@ namespace FosscordSharp
                             });
                             break;
                         default:
+                            Directory.CreateDirectory("dispatch");
+                            File.WriteAllText("dispatch/"+msg.EventName+".txt", JsonConvert.SerializeObject(msg, Formatting.Indented));
                             Util.LogDebug("Unknown dispatch event: " + JsonConvert.SerializeObject(new ExplainedWebsocketMessage(msg)));
                             break;
                     }
-                    File.WriteAllText("dispatch.txt", JsonConvert.SerializeObject(msg, Formatting.Indented));
+                    // File.WriteAllText("dispatch.txt", JsonConvert.SerializeObject(msg, Formatting.Indented));
                     break;
                 case 1: //Heartbeat
                     // Util.Log("Sending heartbeat..");

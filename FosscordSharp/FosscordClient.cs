@@ -43,6 +43,7 @@ namespace FosscordSharp
                 {
                     BaseAddress = new Uri(_config.Endpoint)
                 };
+            Console.WriteLine("Initialised new Fosscord client: FosscordSharp/"+RuntimeInfo.LibVersion);
         }
         /// <summary>
         /// Connect to the instance and log in
@@ -66,9 +67,8 @@ namespace FosscordSharp
             _loginResponse = loginResp.AsT0;
             _httpClient.DefaultRequestHeaders.Add("Authorization", _loginResponse.Token);
             Util.Log("Logged in on REST API!");
-            // _wscli = new FosscordWebsocketClient(this);
-            // await _wscli.Start();
-            // Util.Log("Logged in on WS API!");
+            _wscli = new FosscordWebsocketClient(this);
+            await _wscli.Start();
             // PostLogin();
         }
         /// <summary>
@@ -100,7 +100,7 @@ namespace FosscordSharp
             // _wscli = new FosscordWebsocketClient(this);
             // await _wscli.Start();
             await new FosscordWebsocketClient(this).Start();
-            Util.Log("Logged in on WS API!");
+            // Util.Log("Logged in on WS API!");
             // PostLogin();
         }
 
@@ -160,6 +160,7 @@ namespace FosscordSharp
         {
             var g = await this.GetAsync<User>($"/api/v9/users/" + (id == 0 ? "@me" : id));
             if (g.IsT1) throw new Exception(g.AsT1 + "");
+            g.AsT0.SetClientInTree(this);
             return g.AsT0;
         }
 
@@ -176,6 +177,7 @@ namespace FosscordSharp
         public virtual void OnMessageReceived(MessageReceivedEventArgs e)
         {
             EventHandler<MessageReceivedEventArgs> handler = MessageReceived;
+            e.Message.SetClientInTree(this);
             handler.Invoke(this, e);
         }
 
