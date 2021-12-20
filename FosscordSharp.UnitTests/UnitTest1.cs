@@ -20,10 +20,10 @@ namespace FosscordSharp.UnitTests
         {
             return new FosscordClient(new()
             {
-                Endpoint = "https://fc.home.chrischromeyt.com",
+                Endpoint = "https://fosscord.thearcanebrony.net",
                 Email = $"fosscordsharp.{id}@fosscord.bot",
                 Password = "fosscordsharp",
-                Verbose = true,
+                Verbose = false,
                 RegistrationOptions = new()
                 {
                     Username = "F#Bot" + id,
