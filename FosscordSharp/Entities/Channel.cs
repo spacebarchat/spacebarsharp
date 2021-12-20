@@ -54,7 +54,7 @@ namespace FosscordSharp.Entities
 
         public async Task<Invite> CreateInvite(int duration = 0, int max_uses = 0, bool temporary_membership = true)
         {
-            Util.LogDebug($"Creating invite for {Id}/{Name}");
+            _client.log.LogDebug($"Creating invite for {Id}/{Name}");
             var resp = await _client.PostJsonAsync<Invite>($"/api/v9/channels/{Id}/invites",
                 new { max_age = duration, max_uses = max_uses, temporary = temporary_membership });
             if (resp.IsT1)
@@ -68,7 +68,7 @@ namespace FosscordSharp.Entities
         public async Task<Message[]> GetMessages(ulong? before = null, ulong? after = null, int? amount = 100)
         {
             if (before == null && after == null) before = UInt64.MaxValue;
-            Util.LogDebug($"Fetching {amount} messages {(after == null ? $"before {before}" : $"after {after}")}");
+            _client.log.LogDebug($"Fetching {amount} messages {(after == null ? $"before {before}" : $"after {after}")}");
             var msgs = await _client.GetAsync<Message[]>($"/api/v9/channels/{Id}/messages?amount={amount}&{(after == null ? "before=" + before : "after=" + after)}");
             if (msgs.IsT1)
             {
@@ -87,6 +87,7 @@ namespace FosscordSharp.Entities
             
             if (resp.IsT1)
             {
+                Console.WriteLine("");
                 throw new Exception(resp.AsT1.ToString());
             }
 

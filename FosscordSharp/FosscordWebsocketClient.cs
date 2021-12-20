@@ -55,16 +55,20 @@ namespace FosscordSharp
             };
             ws.Opened += (sender, args) =>
             {
-                Util.Log("WebSocket opened");
+                _client.log.Log("WebSocket opened");
             };
             ws.Closed += (sender, args) =>
             {
-                Util.Log("WebSocket closed");
-                ws.Open();
+                _client.log.Log("WebSocket closed");
+                try
+                {
+                    ws.Open();
+                }
+                catch{}
             };
             ws.Error += (sender, args) =>
             {
-                Util.Log("WebSocket errored");
+                _client.log.Log("WebSocket errored");
             };
             Console.WriteLine("Connecting to websocket!");
             ws.Open();
@@ -76,7 +80,7 @@ namespace FosscordSharp
             switch (msg.OpCode)
             {
                 case 0: //Dispatch
-                    // Util.Log("WS: Event dispatched!");
+                    // _client.log.Log("WS: Event dispatched!");
                     switch (msg.EventName)
                     {
                         case "MESSAGE_CREATE":
@@ -85,24 +89,25 @@ namespace FosscordSharp
                             m.SetClientInTree(_client);
                             _client.OnMessageReceived(new()
                             {
-                                Message = m
+                                Message = m,
+                                Client = _client
                             });
                             break;
                         default:
                             Directory.CreateDirectory("dispatch");
                             File.WriteAllText("dispatch/"+msg.EventName+".txt", JsonConvert.SerializeObject(msg, Formatting.Indented));
-                            Util.LogDebug("Unknown dispatch event: " + JsonConvert.SerializeObject(new ExplainedWebsocketMessage(msg)));
+                            _client.log.LogDebug("Unknown dispatch event: " + JsonConvert.SerializeObject(new ExplainedWebsocketMessage(msg)));
                             break;
                     }
                     // File.WriteAllText("dispatch.txt", JsonConvert.SerializeObject(msg, Formatting.Indented));
                     break;
                 case 1: //Heartbeat
-                    // Util.Log("Sending heartbeat..");
+                    // _client.log.Log("Sending heartbeat..");
                     ws.Send(JsonConvert.SerializeObject(new WebsocketMessage(){OpCode = 1, EventData = seq_id}));
-                    // Util.Log("Heartbeat success!");
+                    // _client.log.Log("Heartbeat success!");
                     break;
                 case 2: //Identify
-                    Util.Log("WS: invalid msg identify");
+                    _client.log.Log("WS: invalid msg identify");
                     break;
                 case 3: //Presence Update
         
@@ -111,26 +116,26 @@ namespace FosscordSharp
         
                     break;
                 case 6: //resume
-                    Util.Log("WS: invalid msg resume");
+                    _client.log.Log("WS: invalid msg resume");
                     break;
                 case 7: //Reconnect
-                    Util.Log("WS: Reconnect!");
+                    _client.log.Log("WS: Reconnect!");
                     ws.Close();
                     // ws.Open();
-                    Util.LogDebug("WS: Reconnected");
+                    // _client.log.LogDebug("WS: Reconnected");
                     break;
                 case 8: //Request Guild Members (send)
                     break;
                 case 9: //Invalid session
-                    Util.LogDebug("WS: invalid session!");
+                    _client.log.LogDebug("WS: invalid session!");
                     break;
                 case 10: //Hello
-                    Util.LogDebugStdout("WebSocket: Hello!");
+                    _client.log.LogDebug("WebSocket: Hello!");
                     var a = ((JObject)msg.EventData)?.Property("heartbeat_interval")?.Value.ToObject<int>();
-                    Util.LogDebugStdout($"Heartbeat interval: {a}");
+                    _client.log.LogDebug($"Heartbeat interval: {a}");
                     
                      ws.Send(ident);
-                    Util.LogDebugStdout("Sent: " + ident);
+                    _client.log.LogDebug("Sent: " + ident);
                     
                     var t = new System.Timers.Timer((double)a! / 2d);
                     t.Enabled = true;
@@ -142,14 +147,14 @@ namespace FosscordSharp
                     t.Start();
                     break;
                 case 11: //Heartbeat ACK
-                    // Util.Log("Heartbeat ACK");
+                    // _client.log.Log("Heartbeat ACK");
                     break;
                 default:
-                    Util.Log($"Unknown opcode {msg.OpCode}! Report this!");
+                    _client.log.Log($"Unknown opcode {msg.OpCode}! Report this!");
                     break;
             }
         
-            // Util.Log("Passed switch block!");
+            // _client.log.Log("Passed switch block!");
         }
     }
 }

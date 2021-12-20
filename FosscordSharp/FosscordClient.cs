@@ -10,6 +10,8 @@ using System.Text;
 using System.Text.Encodings.Web;
 using System.Threading;
 using System.Threading.Tasks;
+using ArcaneLibs.Logging;
+using ArcaneLibs.Logging.LogEndpoints;
 using FosscordSharp.Entities;
 using FosscordSharp.EventArgs;
 using FosscordSharp.ResponseTypes;
@@ -26,6 +28,7 @@ namespace FosscordSharp
         internal HttpClient _httpClient;
         internal RegisterResponse _loginResponse;
         internal FosscordWebsocketClient _wscli;
+        internal LogManager log, debugLog;
         
         /// <summary>
         /// Constructor, requires a configuration to be passed
@@ -43,18 +46,30 @@ namespace FosscordSharp
                 {
                     BaseAddress = new Uri(_config.Endpoint)
                 };
-            Console.WriteLine("Initialised new Fosscord client: FosscordSharp/"+RuntimeInfo.LibVersion);
+            if(_config.LogManager != null) log = _config.LogManager;
+            else
+            {
+                log = new LogManager();
+                log.AddEndpoint(new ConsoleEndpoint());
+            }
+            if(_config.DebugLogManager != null) debugLog = _config.DebugLogManager;
+            else
+            {
+                log = new LogManager();
+                log.AddEndpoint(new DebugEndpoint());
+            }
+            log.Log("Initialised new Fosscord client: FosscordSharp/"+RuntimeInfo.LibVersion);
         }
         /// <summary>
         /// Connect to the instance and log in
         /// </summary>
         public async Task Login()
         {
-            Util.Log("Attempting login");
+            log.Log("Attempting login");
             var loginResp = await this.PostJsonAsync<LoginResponse>("/api/v9/auth/login", new { Login = _config.Email, password = _config.Password, undelete = false });
             if (loginResp.IsT1)
             {
-                Util.Log("Login failed: " + loginResp.AsT1.Errors.First().Value.Errors[0].Message);
+                log.Log("Login failed: " + loginResp.AsT1.Errors.First().Value.Errors[0].Message);
                 if (loginResp.AsT1.Errors.First().Value.Errors[0].Code == "INVALID_LOGIN")
                 {
                     if (_config.ShouldRegister) await Register();
@@ -66,10 +81,10 @@ namespace FosscordSharp
             }
             _loginResponse = loginResp.AsT0;
             _httpClient.DefaultRequestHeaders.Add("Authorization", _loginResponse.Token);
-            Util.Log("Logged in on REST API!");
+            log.Log("Logged in on REST API!");
             _wscli = new FosscordWebsocketClient(this);
             await _wscli.Start();
-            // PostLogin();
+            PostLogin();
         }
         /// <summary>
         /// Register a new account
@@ -84,33 +99,33 @@ namespace FosscordSharp
             });
             if (resp.IsT1)
             {
-                throw new Exception(resp.AsT1.ToString());
+                throw new Exception(_config.Endpoint + ":\n" + resp.AsT1.ToString());
             }
             _loginResponse = resp.AsT0;
             _httpClient.DefaultRequestHeaders.Add("Authorization", _loginResponse.Token);
-            Util.Log("Registered and logged in on REST API!");
+            log.Log("Registered and logged in on REST API!");
             if(_config.RegistrationOptions.CreateBotGuild){
                 Guild defaultGuild = await CreateGuild(_config.RegistrationOptions.Username + "'s Official Discord!");
-                Util.LogDebug($"Created default guild '{defaultGuild.Name}'");
+                log.LogDebug($"Created default guild '{defaultGuild.Name}'");
 
                 Channel[] channels = await defaultGuild.GetChannels();
-                Util.LogDebug($"Default guild invite: {_config.Endpoint}/invite/{(await channels[0].CreateInvite(temporary_membership: false)).Code}");
+                log.LogDebug($"Default guild invite: {_config.Endpoint}/invite/{(await channels[0].CreateInvite(temporary_membership: false)).Code}");
             }
             
             // _wscli = new FosscordWebsocketClient(this);
             // await _wscli.Start();
             await new FosscordWebsocketClient(this).Start();
-            // Util.Log("Logged in on WS API!");
-            // PostLogin();
+            // _client.log.Log("Logged in on WS API!");
+            PostLogin();
         }
 
         internal void PostLogin()
         {
             if (_config.PollMessages)
             {
-                Util.Log("Starting poller");
+                log.Log("Starting poller");
                 new MessagePoller(this).Start();
-                Util.Log("Started poller");
+                log.Log("Started poller");
             }
         }
         /// <summary>

@@ -7,6 +7,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="ArcaneLibs" Version="1.0.0-preview1389174529.daf51d9" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.9.4" />
         <PackageReference Include="OneOf" Version="3.0.201" />
         <PackageReference Include="WebSocket4Net" Version="0.15.2" />

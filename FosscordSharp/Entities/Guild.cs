@@ -116,6 +116,29 @@ namespace FosscordSharp.Entities
             if (!channels.Any(x => x.Id == id)) throw new NullReferenceException("Channel doesn't exist!");
             return channels.First(x => x.Id == id);
         }
+
+        public async Task<Channel> CreateChannel(string name, int type = 0, ulong parent = 0)
+        {
+            if (type == 4 && parent != 0)
+            {
+                throw new ArgumentException("You cannot create categories in categories!");
+            }
+            var resp = await _client.PostJsonAsync<Channel>($"/api/v9/guilds/{Id}/channels", new
+            {
+                name = name,
+                type = type,
+                topic = "",
+                rate_limit_per_user = 0,
+                position = int.MaxValue,
+                nsfw = false
+            });
+            if (resp.IsT1)
+            {
+                throw new Exception(resp.AsT1.ToString());
+            }
+
+            return resp.AsT0;
+        }
     }
 
     public class GuildTemp

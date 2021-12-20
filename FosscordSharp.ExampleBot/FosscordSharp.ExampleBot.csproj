@@ -10,6 +10,7 @@
     </ItemGroup>
 
     <ItemGroup>
+      <PackageReference Include="ArcaneLibs" Version="1.0.0-preview1389174529.daf51d9" />
       <PackageReference Include="WebSocket4Net" Version="0.15.2" />
     </ItemGroup>
 

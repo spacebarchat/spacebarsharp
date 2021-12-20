@@ -1,6 +1,4 @@
 using System;
-using System.Linq;
-using System.Text;
 using FosscordSharp.Core;
 
 namespace FosscordSharp.Utilities
@@ -21,12 +19,12 @@ namespace FosscordSharp.Utilities
             {
                 if(p.PropertyType.IsSubclassOf(typeof(FosscordObject)))
                 {
-                    Console.WriteLine("found property " + p.Name + ": " + p.PropertyType.Name);
+                    // Console.WriteLine("found property " + p.Name + ": " + p.PropertyType.Name);
                     ((FosscordObject)p.GetValue(obj)).SetClientInTree(cli);
                 }
                 else
                 {
-                    Console.WriteLine("not " + p.Name + ": " + p.PropertyType.Name);
+                    // Console.WriteLine("not " + p.Name + ": " + p.PropertyType.Name);
                 }
             }
         }

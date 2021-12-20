@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -10,21 +12,27 @@ namespace FosscordSharp.ExampleBot
 {
     class Program
     {
-        private static FosscordClient client;
+        private static Dictionary<string, FosscordClient> clients = new();
         static void Main(string[] args)
         {
-            Run();
+            if(!File.Exists("instances.txt")) File.WriteAllText("instances.txt", "https://dev.fosscord.com\nhttps://fosscord.thearcanebrony.net\n");
+            foreach (var inst in File.ReadAllLines("instances.txt"))
+            {
+                Run(inst);
+            }
             Thread.Sleep(int.MaxValue);
         }
-        static async void Run()
+        static async void Run(string endpoint)
         {
-            client = new FosscordClient(new()
+            FosscordClient client;
+            clients.Add(endpoint, client = new FosscordClient(new()
             {
                 // Email = $"FosscordSharp{Environment.TickCount64}@example.com",
                 Email = $"FosscordSharpDev@example.com",
                 Password = "FosscordSharp",
-                Endpoint = "https://dev.fosscord.com",
+                // Endpoint = "https://dev.fosscord.com",
                 // Endpoint = "https://fosscord.thearcanebrony.net",
+                Endpoint = endpoint,
                 Verbose = false,
                 ShouldRegister = true,
                 RegistrationOptions =
@@ -34,7 +42,7 @@ namespace FosscordSharp.ExampleBot
                     CreateBotGuild = true
                 },
                 PollMessages = false
-            });
+            }));
             await client.Login();
             User botUser = await client.GetCurrentUser();
             Console.WriteLine($"Logged in as {botUser.Username}#{botUser.Discriminator} ({botUser.Id})!");
@@ -43,7 +51,6 @@ namespace FosscordSharp.ExampleBot
             Console.WriteLine($"I am in {guilds.Length} guilds");
             try
             {
-             
                 await client.JoinGuild("qFlTsl");   
             } catch { }
             guilds = await client.GetGuilds();
@@ -55,19 +62,6 @@ namespace FosscordSharp.ExampleBot
                 foreach (var channel in channels)
                 {
                     Console.WriteLine($"   - {channel.Name} ({channel.Id})");
-                    try
-                    {
-                        Message msg = await channel.SendMessage("Hi from the FosscordSharp example bot!");
-                        Task.Run(async () =>
-                        {
-                            Thread.Sleep(3000);
-                            await msg.Delete();
-                        });
-                    }
-                    catch
-                    {
-                        Console.WriteLine($"Could not send message in {guild.Name}#{channel.Name}");
-                    }
                 }
             }
         }
@@ -77,7 +71,7 @@ namespace FosscordSharp.ExampleBot
             Console.WriteLine("Message received: "+e.Message.Content);
             if (e.Message.Content.StartsWith("!"))
             {
-                var guild = await client.GetGuild(e.Message.GuildId);
+                var guild = await e.Client.GetGuild(e.Message.GuildId);
                 var channel = await guild.GetChannel(e.Message.ChannelId);
                 var _ = e.Message.Content.Split(" ");
                 var command = _[0][1..];
@@ -90,6 +84,9 @@ namespace FosscordSharp.ExampleBot
                                                   " - ping: Pong!\n" +
                                                   " - avatar: Get avatar url.\n" +
                                                   " - guildlist: Get guild + channel list.\n" +
+                                                  " - botinfo: show info about the bot and its environment.\n" +
+                                                  " - joinguild: join guild by invite on current instance.\n" +
+                                                  " - joininstance: join instance.\n" +
                                                   "```");
                         break;
                     case "ping":
@@ -99,13 +96,73 @@ namespace FosscordSharp.ExampleBot
                         await channel.SendMessage($"Your avatar url: {e.Message.Author.AvatarUrl}");
                         break;
                     case "guildlist":
-                        await channel.SendMessage("Guild list:");
-                        foreach (var g in await client.GetGuilds())
+                        string msg = "Guild list:\n";
+                        foreach (var gui in await e.Client.GetGuilds())
                         {
-                            await channel.SendMessage(g.Name);
-                            foreach (var c in await g.GetChannels())
+                            msg += $"- {gui.Name}\n";
+                            foreach (var c in await gui.GetChannels())
                             {
-                                await channel.SendMessage($" - {c.Name}: {(await c.CreateInvite()).FullUrl}");
+                                msg += $"  - {c.Name}: {(c.Type == 0 ? (await c.CreateInvite()).FullUrl : "<no invite, not a text channel>")}\n";
+                            }
+                        }
+
+                        await channel.SendMessage(msg);
+                        break;
+                    case "globaltree":
+                        foreach (var client in clients)
+                        {
+                            string globaltree = "Guild list:\n";
+                            foreach (var gu in await client.Value.GetGuilds())
+                            {
+                                globaltree += $"- {gu.Name}\n";
+                                foreach (var c in await gu.GetChannels())
+                                {
+                                    globaltree += $"  - {c.Name}: {(c.Type == 0 ? (await c.CreateInvite()).FullUrl : "<no invite, not a text channel>")}\n";
+                                }
+                            }
+
+                            await channel.SendMessage(globaltree);
+                        }
+                        
+                        break;
+                    case "botinfo":
+                        await channel.SendMessage($"Bot info:\n" +
+                                                  $".NET version: {Environment.Version}\n" +
+                                                  $"FosscordSharp version: {RuntimeInfo.LibVersion}\n" +
+                                                  $"Guild count: {(await e.Client.GetGuilds()).Length} (instance), {clients.Sum(x=>(x.Value.GetGuilds().Result.Length))} (bot)\n" +
+                                                  $"Instance count: {clients.Count}");
+                        break;
+                    case "joinguild":
+                        if (args.Length != 1)
+                        {
+                            await channel.SendMessage("This command takes one argument!");
+                            break;
+                        }
+                        await e.Client.JoinGuild(args[0].Split("/").Last());
+                        break;
+                    case "joininstance":
+                        if (args.Length != 1)
+                        {
+                            await channel.SendMessage("This command takes one argument!");
+                            break;
+                        }
+                        File.AppendAllText("instances.txt", args[0]+"\n");
+                        Run(args[0]);
+                        break;
+                    case "testguild":
+                        var g = await e.Client.CreateGuild("Test Guild - Delete me");
+                        await channel.SendMessage((await (await g.GetChannels())[0].CreateInvite()).Code);
+                        List<Channel> categories = new();
+                        for (int i = 0; i < 4; i++)
+                        {
+                            categories.Add(await g.CreateChannel("Category "+i));
+                        }
+
+                        foreach (var cat in categories)
+                        {
+                            for (int i = 0; i < 10; i++)
+                            {
+                                g.CreateChannel($"channel" + i, parent: cat.Id);
                             }
                         }
                         break;
