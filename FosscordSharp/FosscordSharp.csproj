@@ -15,7 +15,7 @@
 
     <ItemGroup>
       <PackageReference Include="ArcaneLibs" Version="1.0.0-preview1389174529.daf51d9" />
-      <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+      <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
       <PackageReference Include="OneOf" Version="3.0.201" />
       <PackageReference Include="System.Net.Http.Json" Version="6.0.0-rc.2.21480.5" />
       <PackageReference Include="WebSocket4Net" Version="0.15.2" />
