@@ -82,8 +82,11 @@ namespace FosscordSharp
             _loginResponse = loginResp.AsT0;
             _httpClient.DefaultRequestHeaders.Add("Authorization", _loginResponse.Token);
             log.Log("Logged in on REST API!");
-            _wscli = new FosscordWebsocketClient(this);
-            await _wscli.Start();
+            if (!_config.PollMessages) {
+                _wscli = new FosscordWebsocketClient(this);
+                await _wscli.Start();
+            }
+
             PostLogin();
         }
         /// <summary>

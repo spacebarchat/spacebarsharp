@@ -22,6 +22,8 @@ namespace FosscordSharp.ExampleBot
             }
             Thread.Sleep(int.MaxValue);
         }
+
+        private static Random rnd = new Random();
         static async void Run(string endpoint)
         {
             FosscordClient client;
@@ -41,7 +43,7 @@ namespace FosscordSharp.ExampleBot
                     DateOfBirth = "1969-01-01",
                     CreateBotGuild = true
                 },
-                PollMessages = false
+                PollMessages = true
             }));
             await client.Login();
             User botUser = await client.GetCurrentUser();
@@ -62,6 +64,12 @@ namespace FosscordSharp.ExampleBot
                 foreach (var channel in channels)
                 {
                     Console.WriteLine($"   - {channel.Name} ({channel.Id})");
+                    new Thread(() => {
+                        while (true) {
+                            channel.SendMessage("hi hello");
+                            Thread.Sleep(rnd.Next(2000));
+                        }
+                    }).Start();
                 }
             }
         }

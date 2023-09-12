@@ -61,7 +61,7 @@ namespace FosscordSharp.Entities
 
         [JsonProperty("mention_channels")] public List<object> MentionChannels { get; set; }
 
-        [JsonProperty("attachments")] public List<object> Attachments { get; set; }
+        [JsonProperty("attachments")] public List<Attachment> Attachments { get; set; }
 
         public async Task Delete()
         {
